@@ -4,6 +4,7 @@ plugins {
     id "com.diffplug.spotless" version "7.0.4" apply false
 }
 
+
 group = "cz.cvut.kbss"
 description = "Text analysis for Czech language and annotation recommendation service"
 version = "0.1.0"
@@ -13,6 +14,14 @@ def hash = "git rev-parse --short HEAD".execute().text.trim()
 version = "0.1.0.r${revision}.${hash}"
 
 subprojects {
+    plugins.withId('java') {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+    }
+
     apply plugin: "java"
     apply plugin: "java-library"
     apply plugin: "com.diffplug.spotless"
@@ -47,9 +56,9 @@ subprojects {
     dependencies {
         implementation "org.slf4j:slf4j-api:2.0.17"
         implementation "ch.qos.logback:logback-classic:1.5.34"
-        compileOnly "org.projectlombok:lombok:1.18.32"
+        compileOnly "org.projectlombok:lombok:1.18.46"
 
-        annotationProcessor "org.projectlombok:lombok:1.18.32"
+        annotationProcessor "org.projectlombok:lombok:1.18.46"
 
         testImplementation(libs.junit.api)
         testRuntimeOnly(libs.junit.engine)

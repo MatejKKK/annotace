@@ -11,6 +11,7 @@ include 'api'
 include 'lemmatizer-spark'
 include 'lemmatizer-morphodita'
 include 'keywordextractor-ker'
+include 'lemmatizer-LLM'
 
 include 'lemmatizer-tests'
 
@@ -32,3 +33,6 @@ dependencyResolutionManagement {
         }
     }
 }
+
+include 'lemmatizer-LLM'
+include 'lemmatizer-LLM'

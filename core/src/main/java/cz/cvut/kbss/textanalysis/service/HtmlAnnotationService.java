@@ -25,6 +25,7 @@ import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
 import cz.cvut.kbss.textanalysis.service.html2rdfa.Annotator;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.jena.base.Sys;
 import org.apache.jena.vocabulary.SKOS;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -98,11 +99,16 @@ public class HtmlAnnotationService {
                 .analyzeModel(vocabularies, input.getVocabularyRepositoryUserName(),
                               input.getVocabularyRepositoryPassword(), lang);
 
-        final Document doc = Jsoup.parse(unwrapSpan(Jsoup.parse(input.getContent())).toString());
+        final Document doc = Jsoup.parse(  //transfer HTML text into document
+                unwrapSpan(  //removes all elements qeuried as span[score] ant return HTML text
+                        Jsoup.parse(input.getContent())
+                ).toString()
+        );
         final List<String> chunks = new ArrayList<>();
         final NodeVisitor chunkCollector = new ChunkIterator(chunk -> chunks.add(chunk.getWholeText()));
         NodeTraversor.traverse(chunkCollector, doc);
 
+        //extraction words:
         final KeywordExtractorResult kerResult;
         if (enableKeywordExtraction) {
             final String documentChunksString = String.join("\r\n", chunks);
@@ -111,6 +117,7 @@ public class HtmlAnnotationService {
             kerResult = KeywordExtractorResult.createEmpty();
         }
 
+        //lemmatizer:
         return this.annotate(textChunk -> {
             try {
                 return annotationService.getAnnotations(textChunk, queryResultList, kerResult, lang)
@@ -149,6 +156,18 @@ public class HtmlAnnotationService {
                              final String lang) {
         log.debug("Annotating document has started");
         final Document output = doc.clone();
+
+        Elements elements = output.getAllElements();
+        for (Element element : elements) {
+            System.out.print(element.html());
+            if (isTermOccurrence(element) && element.hasText()) {
+                System.out.print(": " + element.text());
+                // Unwrap any suggested occurrence with score attribute to keep the annotations up-to-date with the vocabulary terms. Keep the assigned occurrences untouched.
+                element.select("span[score]").unwrap();
+            }
+            System.out.println();
+        }
+
         output.outputSettings().prettyPrint(false);
         final Element eHtml = output.selectFirst("html");
         assert eHtml != null;
@@ -188,6 +207,11 @@ public class HtmlAnnotationService {
         }
         return doc;
     }
+
+    /**
+     * @param node is document
+     * @return if typeof is kbss`s attribute
+     */
 
     private boolean isTermOccurrence(Node node) {
         final String typeOf = node.attr("typeof");

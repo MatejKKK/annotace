@@ -25,6 +25,7 @@ import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import cz.cvut.kbss.textanalysis.model.Phrase;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
+import org.apache.jena.base.Sys;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -70,6 +71,8 @@ public class AnnotationService {
 
         for (List<SingleLemmaResult> results : lemmatizerResult.getResult()) {
             for (SingleLemmaResult result : results) {
+
+                System.out.println("slr:" + singleLemmaResultObserver(result));
 
                 List<Phrase> matchedAnnotations = new ArrayList<>();
                 boolean isKeyword = kerResult.getKeywords().contains(result.getLemma());
@@ -125,5 +128,11 @@ public class AnnotationService {
      */
     public List<String> getSupportedLanguages() {
         return lemmatizer.getSupportedLanguages();
+    }
+
+
+
+    private String singleLemmaResultObserver(SingleLemmaResult singleLemmaResult) {
+        return "result: " + singleLemmaResult.getLemma() + ", token: " + singleLemmaResult.getToken();
     }
 }

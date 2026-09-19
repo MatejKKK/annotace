@@ -75,6 +75,8 @@ public class Annotator {
             for (Word word : words) {
                 // TODO overlap
 
+                System.out.println("word: " + word);
+
                 if ((word.getPhrases() == null || word.getPhrases().length == 0)
                         || ((currentNode instanceof TextNode || currentNode == null) && (isStopword(
                         word.getToken())))) {

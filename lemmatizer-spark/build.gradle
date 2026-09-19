@@ -1,3 +1,27 @@
+/*apply plugin: "io.spring.dependency-management"
+
+dependencies {
+    implementation project(":api")
+
+    implementation(libs.spring.boot.web)
+    implementation(libs.jackson.databind)
+
+    implementation("javax.servlet:javax.servlet-api:4.0.1")
+
+    implementation("com.johnsnowlabs.nlp:spark-nlp_2.12:6.4.1") {
+        exclude group: "org.projectlombok", module: "lombok"
+    }
+    implementation("org.apache.spark:spark-mllib_2.12:3.5.8") {
+        exclude group: "org.apache.logging.log4j", module: "log4j-slf4j-impl"
+    }
+
+    testImplementation(libs.spring.boot.test)
+}
+
+test {
+    jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.nio=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED"
+}*/
+
 apply plugin: "io.spring.dependency-management"
 
 dependencies {
@@ -5,6 +29,8 @@ dependencies {
 
     implementation(libs.spring.boot.web)
     implementation(libs.jackson.databind)
+
+    implementation("com.google.guava:guava:33.3.1-jre")
 
     implementation("javax.servlet:javax.servlet-api:4.0.1")
 
