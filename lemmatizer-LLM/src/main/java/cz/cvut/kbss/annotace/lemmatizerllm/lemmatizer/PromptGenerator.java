@@ -1,14 +1,15 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
 
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.AbstractPromptTexts;
+import lombok.Setter;
 
 public class PromptGenerator {
 
     private enum Language {
-        CZECH("cz"),
-        ENGLISH("en"),
-        GERMAN("de"),
-        SLOVAK("sk");
+        CZ("cz"),
+        EN("en"),
+        DE("de"),
+        SK("sk");
 
         private String shortcut;
         private Language(String shortcut) {
@@ -16,38 +17,34 @@ public class PromptGenerator {
         }
     }
 
-    private Language language = Language.ENGLISH;
+    private Language language = Language.EN;
 
+    @Setter
     private AbstractPromptTexts promptTexts;
 
     public PromptGenerator(AbstractPromptTexts promptTexts) {
         this.promptTexts = promptTexts;
     }
 
-    public void setPromptTexts(AbstractPromptTexts promptTexts) {
-        this.promptTexts = promptTexts;
-    }
-
     public void setLanguage(String shortcut) {
-        language = Language.valueOf(shortcut);
+        language = Language.valueOf(shortcut.toUpperCase());
     }
 
-    public String promt(String paragraph) {
+    public String prompt(String paragraph) {
         return switch(this.language) {
-            case CZECH -> promptTexts.CZECH();
-            case ENGLISH -> promptTexts.ENGLISH();
-            case GERMAN -> promptTexts.GERMAN();
-            case SLOVAK -> promptTexts.SLOVAK();
+            case CZ -> promptTexts.CZECH();
+            case EN -> promptTexts.ENGLISH();
+            case DE -> promptTexts.GERMAN();
+            case SK -> promptTexts.SLOVAK();
         } + paragraph;
     }
 
-    public String promt(String paragraph, String originalParagraph) {
-        promptTexts.setOriginal(originalParagraph);
+    public String prompt(String paragraph, String originalParagraph) {
         return switch(this.language) {
-            case CZECH -> promptTexts.CZECH();
-            case ENGLISH -> promptTexts.ENGLISH();
-            case GERMAN -> promptTexts.GERMAN();
-            case SLOVAK -> promptTexts.SLOVAK();
+            case CZ -> promptTexts.CZECH(originalParagraph);
+            case EN -> promptTexts.ENGLISH(originalParagraph);
+            case DE -> promptTexts.GERMAN(originalParagraph);
+            case SK -> promptTexts.SLOVAK(originalParagraph);
         } + paragraph;
     }
 }

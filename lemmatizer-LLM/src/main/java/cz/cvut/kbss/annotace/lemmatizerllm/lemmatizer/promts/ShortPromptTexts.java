@@ -22,4 +22,24 @@ public final class ShortPromptTexts extends AbstractPromptTexts {
     public String SLOVAK() {
         return "Daj mi z každého slova v texte jeho základný tvar (u slovies infititív) tak, že každý riadok bude v tvare [pôvodná_tvar_slova]-[zakldni_tvar_slova_bez_diakritiky] v pôvodnom poradí. Riadky tvor zakaždým nové, aj keď sa dané slovo opakuje. Preveď všetko na jednotné číslo v prvém pádu (prídavná jména a príslovce daj do prvého stupně), pokud to jde. Text je nasledujúci:\n";
     }
+
+    @Override
+    public String CZECH(String original) {
+        return "";
+    }
+
+    @Override
+    public String ENGLISH(String original) {
+        return "";
+    }
+
+    @Override
+    public String GERMAN(String original) {
+        return "";
+    }
+
+    @Override
+    public String SLOVAK(String original) {
+        return "";
+    }
 }

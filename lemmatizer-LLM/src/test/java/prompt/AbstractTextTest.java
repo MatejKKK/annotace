@@ -1,3 +1,5 @@
+package prompt;
+
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
@@ -6,6 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("unused")
 abstract public class AbstractTextTest {
 
     protected AbstractTextTest() {
@@ -15,7 +18,7 @@ abstract public class AbstractTextTest {
     protected final LLMService lemmatizer;
 
     protected abstract void testSimpleText();
-
+    protected abstract void testOneParagraphText();
 
     protected void test(final List<String> correctLemmas, final LemmatizerResult result, double successRate) {
         if (successRate <= 0. || successRate > 100.)  throw new IllegalArgumentException("Percentage has to be between 0 and 100.");
