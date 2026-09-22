@@ -9,7 +9,7 @@ public class SlovakTextTest extends AbstractTextTest {
 
     @Test
     @Override
-    public void testSimpleText() {
+    public void testSimpleText(String input, String expected) {
         final LemmatizerResult result =
                 lemmatizer.process("Otvorením okna v budove sa narušia jeho izolačné vlastnosti",
                         "sk");
@@ -23,7 +23,7 @@ public class SlovakTextTest extends AbstractTextTest {
      */
     @Test
     @Override
-    public void testOneParagraphText() {
+    public void testOneParagraphText(String input, String expected) {
         final LemmatizerResult result =
                 lemmatizer.process("""
                         Pôvodným vlastníkom pozemku bol Ján Pálffy. V roku 1918 štát pozemok skonfiškoval. 

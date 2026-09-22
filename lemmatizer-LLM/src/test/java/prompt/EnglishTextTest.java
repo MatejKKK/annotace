@@ -1,26 +1,43 @@
 package prompt;
 
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class EnglishTextTest extends AbstractTextTest {
 
-    @Test
+    static Stream<Arguments> multiParamProviderSimple() {
+        return Stream.of(
+                arguments("src/test/resources/en/inputs/1.txt", "src/test/resources/en/expected/1.txt")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("multiParamProviderSimple")
     @Override
-    public void testSimpleText() {
-        final LemmatizerResult result = lemmatizer.process("UK is going down.", "en");
-        final List<String> lemmas = List.of("UK", "be", "go", "down", ".");
+    public void testSimpleText(String input, String expected) {
+        String text = this.getInputText(input);
+        LemmatizerResult result = lemmatizer.process(text, "cz");
+        List<String> lemmas = this.getExpectedList(expected);
         test(lemmas, result, 95);
     }
 
-    /**
-     * @link <a href="https://en.wikipedia.org/wiki/English_language">English</a>
-     */
-    @Test
+    static Stream<Arguments> multiParamProviderParagraph() {
+        return Stream.of(
+                arguments("src/test/resources/en/inputs/2.txt", "src/test/resources/en/expected/2.txt")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("multiParamProviderParagraph")
     @Override
-    public void testOneParagraphText() {
+    public void testOneParagraphText(String input, String expected) {
         final LemmatizerResult result =
                 lemmatizer.process("""
                         English is either the official language, or one of the official languages, 

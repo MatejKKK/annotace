@@ -17,7 +17,7 @@ import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.SentenceExtractor.*
 @Slf4j
 public class LLMService implements LemmatizerApi {
 
-    static final int BASE_TOKENS = 1024;
+    static final int BASE_TOKENS = 2048;
     static final double TOKENS_PER_WORD = 5.5;
     static final double GROWTH_EXPONENT = 1.12;
     static final int MIN_TOKENS = 2048;

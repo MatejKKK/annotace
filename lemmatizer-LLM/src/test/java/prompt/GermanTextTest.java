@@ -9,7 +9,7 @@ public class GermanTextTest  extends AbstractTextTest {
 
     @Test
     @Override
-    public void testSimpleText() {
+    public void testSimpleText(String input, String expected) {
         final LemmatizerResult result = lemmatizer.process("Die schönsten Berge sind in den Alpen.", "de");
         final List<String> lemmas = List.of("Die", "schön", "schon", "Berg", "sein", "in", "der", "Alpen", ".");
         test(lemmas, result, 90);
@@ -17,7 +17,7 @@ public class GermanTextTest  extends AbstractTextTest {
 
     @Test
     @Override
-    public void testOneParagraphText() {
+    public void testOneParagraphText(String input, String expected) {
 
     }
 }

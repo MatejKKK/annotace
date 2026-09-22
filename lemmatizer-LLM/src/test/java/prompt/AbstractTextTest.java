@@ -4,6 +4,10 @@ import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,8 +21,8 @@ abstract public class AbstractTextTest {
 
     protected final LLMService lemmatizer;
 
-    protected abstract void testSimpleText();
-    protected abstract void testOneParagraphText();
+    protected abstract void testSimpleText(String input, String expected);
+    protected abstract void testOneParagraphText(String input, String expected);
 
     protected void test(final List<String> correctLemmas, final LemmatizerResult result, double successRate) {
         if (successRate <= 0. || successRate > 100.)  throw new IllegalArgumentException("Percentage has to be between 0 and 100.");
@@ -48,5 +52,46 @@ abstract public class AbstractTextTest {
         );
 
         assertTrue(success);
+    }
+
+    protected  String getInputText(String fileName) {
+        StringBuilder sb = new StringBuilder();
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line = br.readLine();
+
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return sb.toString();
+    }
+
+    protected List<String> getExpectedList(String fileName) {
+        List<String> result = new ArrayList<>();
+        try(BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line = br.readLine();
+
+            while (line != null) {
+                if (line.startsWith("//// ") || line.startsWith(" //// ")) {
+                    line = br.readLine();
+                    continue;
+                }
+                else if (line.contains(" //// ")) {
+                    int index = line.indexOf(" //// ");
+                    line = line.substring(0, index);
+                }
+                result.add(line);
+                line = br.readLine();
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
     }
 }
