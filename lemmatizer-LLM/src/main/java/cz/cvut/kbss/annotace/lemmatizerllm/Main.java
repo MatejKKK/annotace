@@ -1,5 +1,6 @@
 package cz.cvut.kbss.annotace.lemmatizerllm;
 
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
@@ -8,7 +9,9 @@ import java.util.List;
 
 public class Main {
 
-    private static final LLMService lemmatizer = new LLMService();
+    private static final LLMService lemmatizer = new LLMService(
+            new LLMConf("^", 400)
+    );
 
     public static void main(String[] args) {
         try {

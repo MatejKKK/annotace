@@ -1,10 +1,10 @@
-Cíl //// Cílem
+cíl //// Cílem
 kniha //// knihy
 200 //// 200
 | //// |
 Město //// Město
 | //// |
-Fyzický //// Fyzické
+fyzický //// Fyzické
 vystavěný //// vystavěné
 prostředí //// prostředí
 být //// je
@@ -21,7 +21,7 @@ v //// v
 krajina //// krajině
 . //// .
 //// Věta 2
-Kniha //// Kniha
+kniha //// Kniha
 řešit //// řeší
 stavba //// stavby
 a //// a
@@ -48,11 +48,11 @@ zabývat //// zabývá
 kniha //// kniha
 300 //// 300
 | //// |
-Využití //// Využití
+využití //// Využití
 území //// území
 . //// .
 //// Věta 3
-Daleko //// Dále
+daleko //// Dále
 také //// také
 navazovat //// navazuje
 a //// a
@@ -63,7 +63,7 @@ s //// s
 kniha //// knihou
 100 //// 100
 | //// |
-Krajina //// Krajina
+krajina //// Krajina
  //// 
 a //// a
 ten //// to
@@ -82,7 +82,7 @@ od //// od
 krajinný //// krajinného
 . //// .
 //// Věta 4
-Čtenář //// Čtenář
+čtenář //// Čtenář
 kniha //// knihy
 200 //// 200
 získat //// získá
@@ -115,7 +115,7 @@ městský //// městském
 prostor //// prostoru
 . //// .
 //// Věta 5
-Téma //// Témata
+téma //// Témata
 uvedený //// uvedená
 v //// v
 kniha //// knize
@@ -136,7 +136,7 @@ vystavěný //// vystavěného
 prostředí //// prostředí
 . //// .
 //// Věta 6
-U //// U
+u //// U
 některý //// některých
 téma //// témat
 být //// je
@@ -152,7 +152,7 @@ rozdělování //// rozdělování
 fenomén //// fenoménů
 . //// .
 //// Věta 7
-Kniha //// Kniha
+kniha //// Kniha
 začínat //// začíná
 úvodní //// úvodní
 kapitola //// kapitolou
@@ -181,7 +181,7 @@ strategický //// strategických
 dokument //// dokumentů
 . //// .
 //// Věta 8
-Kniha //// Kniha
+kniha //// Kniha
 pokračovat //// pokračuje
 kapitola //// kapitolou
 2 //// 2
@@ -219,7 +219,7 @@ Praha //// Praze
 projít //// prošlo
 . //// .
 //// Věta 10
-Navazovat //// Navazuje
+navazovat //// Navazuje
 popis //// popis
 hodnota //// hodnot
 město //// města
@@ -231,7 +231,7 @@ kulturní //// kulturního
 dědictví //// dědictví
 . //// .
 //// Věta 11
-Druhá //// Druhá
+druhá //// Druhá
 obsahový //// obsahová
 kapitola //// kapitola
 3 //// 3
@@ -243,7 +243,7 @@ uspořádání //// uspořádáním
 město //// města
 . //// .
 //// Věta 12
-Začínat //// Začíná
+začínat //// Začíná
 uvedení //// uvedením
 současný //// současného
 pojetí //// pojetí
@@ -267,7 +267,7 @@ lokalita //// lokalit
 ) //// )
 . //// .
 //// Věta 13
-Daleko //// Dále
+daleko //// Dále
 být //// jsou
 řešený //// řešeny
 morfologický //// morfologické
@@ -279,7 +279,7 @@ zástavba //// zástavby
 ) //// )
 . //// .
 //// Věta 14
-Následující //// Následující
+následující //// Následující
 podkapitola //// podkapitola
 3.3 //// 3.3
 prezentovat //// prezentuje
@@ -297,7 +297,7 @@ jejich //// jejich
 morfologie //// morfologie
 . //// .
 //// Věta 15
-Popis //// Popis
+popis //// Popis
 prostorový //// prostorového
 uspořádání //// uspořádání
 město //// města
@@ -329,7 +329,7 @@ stavební //// stavebních
 dominanta //// dominant
 . //// .
 //// Věta 16
-Významný //// Významné
+významný //// Významné
 pohled //// pohledy
 na //// na
 město //// město
@@ -351,3 +351,4 @@ možný //// možné
 on //// je
 prohlížet //// prohlížet
 . //// .
+, //// ,

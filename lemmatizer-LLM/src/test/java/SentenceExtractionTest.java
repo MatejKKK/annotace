@@ -1,12 +1,19 @@
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.SentenceExtractor;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.SingleLemmaResultFactory;
+import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class SentenceExtractionTest {
 
@@ -95,5 +102,139 @@ java.lang.RuntimeException: Error sending request: API error: status=429, body={
     @Test
     public void tokensTest() {
         assertEquals(1327.5, tested());
+    }
+
+
+    private static SingleLemmaResult simpleFactory(String token) {
+        SingleLemmaResult result = new SingleLemmaResult();
+        result.setToken(token);
+        result.setLemma("");
+        result.setNegated(false);
+        return result;
+    }
+
+    private static SingleLemmaResult simpleFactory(String token, String leadingSpaces, String trailingSpaces) {
+        SingleLemmaResult result = new SingleLemmaResult();
+        result.setToken(token);
+        result.setLeadingSpaces(leadingSpaces);
+        result.setTrailingSpaces(trailingSpaces);
+        result.setLemma("");
+        result.setNegated(false);
+        return result;
+    }
+
+    private final static String ONE_SPACE = " ";
+    private final static String TWO_SPACES = "  ";
+    private final static String THREE_SPACES = "   ";
+    private final static String FOUR_SPACES = "    ";
+    private final static String FIVE_SPACES = "     ";
+    private final static String SIX_SPACES = "      ";
+    private final static String SEVEN_SPACES = "       ";
+    private final static String EIGHT_SPACES = "        ";
+
+
+    static Stream<Arguments> multiParamProvider() {
+        return Stream.of(
+                arguments(
+                        "slovo",
+                        List.of(simpleFactory("slovo")),
+                        List.of(simpleFactory("slovo", "", ""))
+                ),
+                arguments(
+                        ONE_SPACE + "slovo" + ONE_SPACE,
+                        List.of(simpleFactory("slovo")),
+                        List.of(simpleFactory("slovo", ONE_SPACE, ONE_SPACE))
+                ),
+                arguments(
+                        "slovo" + TWO_SPACES,
+                        List.of(simpleFactory("slovo")),
+                        List.of(simpleFactory("slovo", "", TWO_SPACES))
+                ),
+                arguments(
+                        TWO_SPACES + "slovo",
+                        List.of(simpleFactory("slovo")),
+                        List.of(simpleFactory("slovo", TWO_SPACES, ""))
+                ),
+                arguments("Starý" + ONE_SPACE +
+                        "člověk" + TWO_SPACES +
+                        "chodí" + THREE_SPACES +
+                        "do" + FOUR_SPACES +
+                        "kostela" + FIVE_SPACES +
+                        "častěji" + SIX_SPACES +
+                        "než" + SEVEN_SPACES +
+                        "mladší" + EIGHT_SPACES +
+                        "lidé",
+                        List.of(
+                                simpleFactory("Starý"),
+                                simpleFactory("člověk"),
+                                simpleFactory("chodí"),
+                                simpleFactory("do"),
+                                simpleFactory("kostela"),
+                                simpleFactory("častěji"),
+                                simpleFactory("než"),
+                                simpleFactory("mladší"),
+                                simpleFactory("lidé")
+                        ),
+                        List.of(
+                                simpleFactory("Starý", "", ONE_SPACE),
+                                simpleFactory("člověk", ONE_SPACE, TWO_SPACES),
+                                simpleFactory("chodí", TWO_SPACES, THREE_SPACES),
+                                simpleFactory("do", THREE_SPACES, FOUR_SPACES),
+                                simpleFactory("kostela", FOUR_SPACES, FIVE_SPACES),
+                                simpleFactory("častěji", FIVE_SPACES, SIX_SPACES),
+                                simpleFactory("než", SIX_SPACES, SEVEN_SPACES),
+                                simpleFactory("mladší", SEVEN_SPACES, EIGHT_SPACES),
+                                simpleFactory("lidé", EIGHT_SPACES, "")
+                        )
+                ),
+                arguments("AA" + ONE_SPACE +
+                                "AA" + TWO_SPACES +
+                                "AA" + THREE_SPACES +
+                                "BB" + FOUR_SPACES +
+                                "BB" + FIVE_SPACES +
+                                "AA" + SIX_SPACES +
+                                "BB" + SEVEN_SPACES +
+                                "BB" + EIGHT_SPACES +
+                                "BB",
+                        List.of(
+                                simpleFactory("AA"),
+                                simpleFactory("AA"),
+                                simpleFactory("AA"),
+                                simpleFactory("BB"),
+                                simpleFactory("BB"),
+                                simpleFactory("AA"),
+                                simpleFactory("BB"),
+                                simpleFactory("BB"),
+                                simpleFactory("BB")
+                        ),
+                        List.of(
+                                simpleFactory("AA", "", ONE_SPACE),
+                                simpleFactory("AA", ONE_SPACE, TWO_SPACES),
+                                simpleFactory("AA", TWO_SPACES, THREE_SPACES),
+                                simpleFactory("BB", THREE_SPACES, FOUR_SPACES),
+                                simpleFactory("BB", FOUR_SPACES, FIVE_SPACES),
+                                simpleFactory("AA", FIVE_SPACES, SIX_SPACES),
+                                simpleFactory("BB", SIX_SPACES, SEVEN_SPACES),
+                                simpleFactory("BB", SEVEN_SPACES, EIGHT_SPACES),
+                                simpleFactory("BB", EIGHT_SPACES, "")
+                        )
+                )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("multiParamProvider")
+    public void lemmaSpacesTest(String paragraph, List<SingleLemmaResult> input, List<SingleLemmaResult> expected) {
+        List<SingleLemmaResult> result = SingleLemmaResultFactory.addSpacesToLemma(input, paragraph);
+
+        result.forEach(singleLemmaResult ->
+            assertTrue(expected.stream().anyMatch(e ->
+                    e.getToken().equals(singleLemmaResult.getToken()) &&
+                            e.getLeadingSpaces().equals(singleLemmaResult.getLeadingSpaces()) &&
+                            e.getTrailingSpaces().equals(singleLemmaResult.getTrailingSpaces())
+
+            ), "Token " + singleLemmaResult.getToken() + " should have match with " +
+                    singleLemmaResult.getLeadingSpaces().length() + " leading spaces and " + singleLemmaResult.getTrailingSpaces().length() + " trailing spaces.")
+        );
     }
 }

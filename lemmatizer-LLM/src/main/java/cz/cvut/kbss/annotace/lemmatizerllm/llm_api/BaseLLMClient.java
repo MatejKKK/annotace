@@ -81,7 +81,7 @@ public abstract class BaseLLMClient implements LLMClient {
 
             }
             catch (RuntimeException e) {
-                if (attempt < 3 && e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute ")) {
+                if (attempts < 3 && e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute")) {
                     final int startIndex = e.getMessage().indexOf("Please try again in ");
                     if (startIndex == -1) {
                         throw new RuntimeException("Error sending request: " + e.getMessage(), e);
@@ -110,7 +110,7 @@ public abstract class BaseLLMClient implements LLMClient {
 
     private String sendAgain(String prompt, int maxTokens, double time) {
         try {
-            Thread.sleep(Math.min((long) Math.floor(time), 20000L));
+            Thread.sleep(Math.min((long) Math.floor(time), 2_000));
         }
         catch (InterruptedException ignore) {}
         ++attempts;

@@ -1,5 +1,7 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
 
+import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;

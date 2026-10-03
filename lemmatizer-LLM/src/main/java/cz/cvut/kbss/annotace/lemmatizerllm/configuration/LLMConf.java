@@ -1,4 +1,7 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.configuration;
 
-public class LLMConf {
+public record LLMConf(
+        String delimiter, int maxSentenceLength
+) {
+
 }

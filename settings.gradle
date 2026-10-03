@@ -12,8 +12,8 @@ include 'lemmatizer-spark'
 include 'lemmatizer-morphodita'
 include 'keywordextractor-ker'
 include 'lemmatizer-LLM'
-
 include 'lemmatizer-tests'
+include 'testservice'
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -33,6 +33,3 @@ dependencyResolutionManagement {
         }
     }
 }
-
-include 'lemmatizer-LLM'
-include 'lemmatizer-LLM'
