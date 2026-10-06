@@ -10,7 +10,7 @@ import java.util.List;
 public class Main {
 
     private static final LLMService lemmatizer = new LLMService(
-            new LLMConf("^", 400)
+            new LLMConf("^", 450)
     );
 
     public static void main(String[] args) {

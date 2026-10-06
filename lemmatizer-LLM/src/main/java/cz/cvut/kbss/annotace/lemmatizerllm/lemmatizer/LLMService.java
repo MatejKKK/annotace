@@ -16,28 +16,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.SentenceExtractor.*;
+import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.TextExtractor.*;
 
 @Slf4j
 public class LLMService implements LemmatizerApi {
 
-    static final int BASE_TOKENS = 2048;
-    static final double TOKENS_PER_WORD = 5.5;
-    static final double GROWTH_EXPONENT = 1.12;
-    static final int MIN_TOKENS = 2048;
-    static final int MAX_TOKENS = 8192;
+    private static final int BASE_TOKENS = 2048;
+    private static final double TOKENS_PER_WORD = 5.5;
+    private static final double GROWTH_EXPONENT = 1.12;
+    private static final int MIN_TOKENS = 2048;
+    private static final int MAX_TOKENS = 8192;
 
 
     public LLMService(LLMConf conf) {
         this.conf = conf;
-        this.singleLemmaResultFactory = new SingleLemmaResultFactory(conf.delimiter());
+        this.singleLemmaResultFactory = new SingleLemmaResultFactory(conf.getDelimiter());
     }
 
     @Setter
     private LLMConf conf;
 
     private final PromptGenerator promptGenerator = new PromptGenerator(new LongPromptTexts());
-    private SingleLemmaResultFactory singleLemmaResultFactory;
+    private final SingleLemmaResultFactory singleLemmaResultFactory;
     private Language language = Language.EN;
 
     private final GroqClient groqClient = new GroqClient(
@@ -48,7 +48,7 @@ public class LLMService implements LemmatizerApi {
     public LemmatizerResult process(String text, String lang) {
         setLanguage(lang);
 
-        String[] paragraphs = text.split("\n\n\n\n");
+        String[] paragraphs = mergeParagraphs(extractParagraphs(text), conf.getMaxParagraphLength() * 2);
         final List<List<SingleLemmaResult>> results = new ArrayList<>();
 
         for (final String paragraph : paragraphs) {
@@ -56,8 +56,7 @@ public class LLMService implements LemmatizerApi {
             groqClient.setModel("openai/gpt-oss-20b");
             final List<String> paragraphResults = new ArrayList<>();
 
-            final List<String> singleSentences = extractSentence(paragraph);
-            final String[] sentences = mergeSentences(singleSentences, conf.maxSentenceLength());
+            final String[] sentences = mergeSentences(extractSentences(paragraph), conf.getMaxSentenceLength());
 
             for (int i = 0; i < sentences.length; i++) {
                 if (i > 0) {
@@ -96,11 +95,14 @@ public class LLMService implements LemmatizerApi {
 
     private List<SingleLemmaResult> responseLemmaParser(String response, String paragraph) {
         List<SingleLemmaResult> result = new ArrayList<>();
-        final String[] lines = Arrays.stream(response.split("\n")).filter(s -> s.contains(conf.delimiter())).toArray(String[]::new);
-        for (String line : lines) {
-            if (line.isBlank()) continue;
+        final String[] paragraphs = response.split("\n\n");
+        for (final String paragraphResponse : paragraphs) {
+            final String[] lines = Arrays.stream(paragraphResponse.split("\n")).filter(s -> s.contains(conf.getDelimiter())).toArray(String[]::new);
+            for (final String line : lines) {
+                if (line.isBlank()) continue;
 
-            result.add(singleLemmaResultFactory.createSingleLemmaResult(line));
+                result.add(singleLemmaResultFactory.createSingleLemmaResult(line));
+            }
         }
 
         return SingleLemmaResultFactory.addSpacesToLemma(result, paragraph);
@@ -109,11 +111,17 @@ public class LLMService implements LemmatizerApi {
     private List<String> responseWordParser(String response) {
         List<String> result = new ArrayList<>();
         final String[] lines = Arrays.stream(response.split("\n")).filter(
-                s -> s.chars().filter(ch -> ch == conf.delimiter().toCharArray()[0]).count() == 1  //todo conf.delimiter().toCharArray()[0]
+                s -> s.chars().filter(ch -> ch == conf.getDelimiter().toCharArray()[0]).count() == 1  //todo conf.delimiter().toCharArray()[0]
         ).toArray(String[]::new);
 
+        boolean started = false;
+
         for (String line : lines) {
-            if (line.isBlank() || line.length() < 3) continue;
+            if (line.isBlank() || line.length() < 3) {
+                if (!started) continue;
+                started = false;
+            }
+            else started = true;
 
             while (line.endsWith(" ")) {
                 line = line.substring(0, line.length() - 1);

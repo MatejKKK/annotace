@@ -3,6 +3,7 @@ package cz.cvut.kbss.annotace;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
+import java.util.Collection;
 import java.util.List;
 
 public class Tests {
@@ -24,7 +25,16 @@ public class Tests {
 
     public static boolean simpleRateTest(final List<String> correctLemmas, final LemmatizerResult result, double successRate) {
         if (successRate <= 0. || successRate > 100.)  throw new IllegalArgumentException("Percentage has to be between 0 and 100.");
-        if (result.getResult().isEmpty() || result.getResult().getFirst().isEmpty())  throw new AssertionError("Empty result");
+        if (result.getResult().isEmpty() || result.getResult().stream().anyMatch(List::isEmpty))  throw new AssertionError("Empty result");
+
+        boolean sameSize = Math.abs(
+                correctLemmas.size() - result.getResult().stream().flatMap(Collection::stream).toList().size()
+        ) <= correctLemmas.size() / 25.0;
+
+        if (!sameSize) {
+            System.out.println("Sizes of expected and actual lists are too much different.");
+            return false;
+        }
 
         final CorrectAndTotal counts = getCounts(correctLemmas, result);
         final double rate = 100. * counts.rate();

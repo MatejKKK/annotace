@@ -4,24 +4,27 @@ public final class LongPromptTexts extends AbstractPromptTexts {
     @Override
     public String CZECH() {
         return """
-Jsi nástroj na morfologickou lemmatizaci českého textu. Pro každé slovo v zadané větě urči jeho základní (slovníkový) tvar.
+Jsi nástroj na morfologickou lemmatizaci českého textu. Pro každé slovo a interpunkční znaménko v zadané větě urči jeho základní (slovníkový) tvar.
 
 Pravidla:
-- U sloves použij infinitiv (včetně pomocných tvarů slovesa "být", např. "jsem" -> "být"). Zápor "ne-" v lematu odstraň (např. "nesnídal" -> "snídat").
-- U podstatných jmen použij 1. pád jednotného čísla. Pokud podstatné jméno v daném významu jednotné číslo nemá (pomnožné podstatné jméno, např. "housle", "peníze", "dveře"), použij 1. pád množného čísla, nikdy ne vymyšlené jednotné číslo.
-- U přídavných jmen a příslovcí použij 1. stupeň, i při nepravidelném stupňování (např. "lepší" -> "dobrý", "později" -> "pozdě").
-- Skloňovaná zájmena normalizuj na citátovou (základní) formu.
-- Předložky, spojky, částice, číslovky a interpunkci ponech beze změny.
-- Velké písmeno v základním tvaru zachovej VŽDY přesně podle originálu - i na začátku věty, kde je slovo velké jen díky pozici (např. předložka nebo sloveso na začátku věty), ne protože by se jinak psalo s velkým písmenem.
-- Diakritiku v základním tvaru NEODSTRAŇUJ.
+- Slovesa: infinitiv se stejným videm, jaký má tvar; nikdy ho nepřevádět na vidový protějšek ("prošlo" -> "projít", ne "procházet"; "nedocházelo" -> "docházet", ne "dojít"). Včetně "jsem" -> "být". Zápor "ne-" odstraň ("nesnídal" -> "snídat"). Lemma nikdy není v trpném rodu: "byl završen" -> "završit", "bylo rozšířeno" -> "rozšířit".
+- Nezaměňuj slovesa a přídavná jména. Trpné příčestí jako přívlastek je přídavné jméno ("vystavěného prostředí" -> "vystavěný", "uvedená města" -> "uvedený"). Tvary jako "studující" nebo "následující" jsou přídavná jména ("studující", "následující"), ne slovesa. Slovesná podstatná jména zůstávají podstatnými jmény ("uvedením" -> "uvedení").
+- Podstatná jména: 1. pád jednotného čísla. Pokud jednotné číslo nemají (housle, prázdniny, dveře), 1. pád množného čísla ("prázdninách" -> "prázdniny"), nikdy vymyšlené jednotné číslo. Pozor na tvary bez koncovky, které vypadají jako základní tvar, ale jsou to jiný pád ("lokalit" -> "lokalita", "dominant" -> "dominanta"); tvar neopisuj jen proto, že vypadá jako lemma. Vlastní jména: "Praze" -> "Praha"; přivlastňovací přídavné jméno "Karlova" (Univerzita Karlova) -> "Karlův".
+- Přídavná jména a příslovce: 1. stupeň, předponu "nej-" odstraň, i při nepravidelném stupňování ("lepší" -> "dobrý", "dále" -> "daleko", "déle" -> "dlouho", "dříve" -> "brzy", "později" -> "pozdě", "výše" -> "vysoko", "více" -> "mnoho"). Příslovce zůstává příslovcem ("nově" -> "nově", ne "nový"). Předpona "ne-" u přídavných jmen zůstává ("nemovitých" -> "nemovitý").
+- Skloňovaná zájmena normalizuj na základní tvar ("tě" -> "ty", "ta" -> "ten", "ho" -> "on").
+- Předložky, spojky, částice, číslovky, interpunkci a neohebná slova ponech beze změny; nevymýšlej jim jiné lemma ani jiný slovní druh ("pak" -> "pak", "trochu" -> "trochu", "nikoliv" -> "nikoliv").
+- Velká písmena: základní tvar se píše malými písmeny, i když je tvar na začátku věty velký ("Cílem" -> "cíl", "Žila" -> "žít"). Velké písmeno má lemma jen tehdy, když se slovo píše vždy s velkým (vlastní jména: "Praha", "Albert", "Karlův"). Velikost písmen původního tvaru na lemma nemá vliv. Jediná výjimka: římské číslice mají lemma vždy velkými písmeny ("ii" -> "II").
+- Diakritiku NEODSTRAŇUJ.
+- Každý interpunkční znak je samostatný řádek, včetně závorek a uvozovek („ “ "). Spojení jako ")." nebo ")," rozděl na dva řádky. Číslo nebo římská číslice s tečkou ("19. století", "ii. fáze") jsou dva řádky: číslo a zvlášť tečka.
 - Zachovej přesné pořadí slov a vytvoř samostatný řádek pro KAŽDÝ výskyt slova, i když se opakuje.
 - Výstup je vždy ve formátu: původní_tvar^základní_tvar, jeden pár na řádek.
+- Pokud narazíš na nový odstavec, vytvoř prázdný řádek.
 - Nepiš nic navíc - žádné vysvětlení, žádné nadpisy, jen řádky.
 
 Příklad 1:
-Vstup: "Kvůli starým houslím se rodina dlouho hádala, ačkoli o ně už nikdo nestál."
+Vstup: "Kvůli starým houslím se rodina dlouho hádala, ačkoli o ni už nikdo nestál."
 Výstup:
-Kvůli^Kvůli
+Kvůli^kvůli
 starým^starý
 houslím^housle
 se^se
@@ -31,7 +34,7 @@ hádala^hádat
 ,^,
 ačkoli^ačkoli
 o^o
-ně^on
+ni^ona
 už^už
 nikdo^nikdo
 nestál^stát
@@ -40,7 +43,7 @@ nestál^stát
 Příklad 2:
 Vstup: "Nesnídal jsi nikdy dřív než v devět hodin, a tvoje sestry vstávaly ještě později."
 Výstup:
-Nesnídal^Snídat
+Nesnídal^snídat
 jsi^být
 nikdy^nikdy
 dřív^brzy
@@ -55,6 +58,39 @@ sestry^sestra
 vstávaly^vstávat
 ještě^ještě
 později^pozdě
+.^.
+
+Příklad 3:
+Vstup: "Cílem kapitoly je analyzovat „veřejný prostor“ vystavěného města. Dále se zjišťuje, jak byla zástavba v 19. století rozšířena (ii. fáze)."
+Výstup:
+Cílem^cíl
+kapitoly^kapitola
+je^být
+analyzovat^analyzovat
+„^„
+veřejný^veřejný
+prostor^prostor
+“^“
+vystavěného^vystavěný
+města^město
+.^.
+Dále^daleko
+se^se
+zjišťuje^zjišťovat
+,^,
+jak^jak
+byla^být
+zástavba^zástavba
+v^v
+19^19
+.^.
+století^století
+rozšířena^rozšířit
+(^(
+ii^II
+.^.
+fáze^fáze
+)^)
 .^.
 
 Nyní zpracuj stejným způsobem následující věty:
@@ -76,6 +112,7 @@ Rules:
 - Keep any diacritics/accents in the base form exactly as a standard dictionary entry would have them.
 - Keep the exact word order and produce a separate line for EVERY occurrence of a word, even if it repeats.
 - Output format: original_form^base_form, one pair per line.
+- If you encounter a new paragraph, create a blank line between the other lines.
 - Do not write anything else - no explanations, no headers, just the lines.
 
 Example 1:
@@ -144,6 +181,7 @@ Regeln:
 - Entferne Umlaute und ß in der Grundform NICHT und ersetze sie nicht.
 - Behalte die exakte Wortreihenfolge bei und erzeuge für JEDES Vorkommen eines Wortes eine eigene Zeile, auch bei Wiederholung.
 - Ausgabeformat: Originalform^Grundform, ein Paar pro Zeile.
+- Wenn Sie auf einen neuen Absatz stoßen, fügen Sie eine Leerzeile zwischen den anderen Zeilen ein.
 - Schreibe nichts Zusätzliches - keine Erklärungen, keine Überschriften, nur die Zeilen.
 
 Beispiel 1:
@@ -214,6 +252,7 @@ Pravidlá:
 - Diakritiku v základnom tvare NEODSTRAŇUJ.
 - Zachovaj presné poradie slov a vytvor samostatný riadok pre KAŽDÝ výskyt slova, aj keď sa opakuje.
 - Výstup je vždy vo formáte: pôvodný_tvar^základný_tvar, jeden pár na riadok.
+- Ak na narazíš na nový odsek, vytvor prázdny riadok pre medzi ostatnými riadkami.
 - Nepíš nič naviac - žiadne vysvetlenie, žiadne nadpisy, len riadky.
 
 Príklad 1:
@@ -254,104 +293,141 @@ Teraz spracuj rovnakým spôsobom nasledujúce vety:
     }
     public String CZECH(String original) {
         return """
-Jsi validátor a oprava výstupu z morfologické lemmatizace českého textu. Dostaneš dva vstupy: (1) PŮVODNÍ TEXT, celý odstavec, který může obsahovat jednu i více vět, a (2) NÁVRH, výsledek lemmatizace vytvořený samostatně věta po větě - a proto může obsahovat chyby vzniklé tím, že jednotlivé věty nebyly posuzovány v kontextu celého odstavce.
+Jsi validátor a oprava výstupu z morfologické lemmatizace českého textu. Dostaneš dva vstupy: (1) PŮVODNÍ TEXT, celý odstavec, který může obsahovat jednu i více vět, a (2) VÝSLEDEK.
 
-Tvým úkolem je návrh zkontrolovat a opravit, ne vytvořit lemmatizaci znovu od začátku.
+Tvým úkolem je návrh zkontrolovat a opravit, ne vytvořit lemmatizaci znovu od začátku. Pokud je řádek správně, přepiš ho beze změny. Pokud obsahuje chybu, oprav pouze ji.
 
-U každého řádku ve tvaru původní_tvar-základní_tvar prověř zejména:
-- Je sloveso v infinitivu a byla odstraněna případná záporka "ne-"?
-- Je podstatné jméno v 1. pádu jednotného čísla, nebo (u pomnožných jmen) v 1. pádu množného čísla - a ne ve vymyšleném jednotném čísle tam, kde skutečné jednotné číslo neexistuje?
-- Je přídavné jméno nebo příslovce v 1. stupni, i když bylo v návrhu chybně ponecháno ve 2. nebo 3. stupni?
-- Je zájmeno v citátové formě?
-- Zůstala diakritika stejná, jako by měl mít standardní slovníkový lemma?
-- Zůstalo velké/malé písmeno přesně podle originálu, včetně slov na začátku věty, která jsou velká jen díky pozici?
-- Odpovídá počet řádků přesně počtu slov a interpunkčních znamének v PŮVODNÍM TEXTU, v nezměněném pořadí, bez chybějících, přidaných nebo slitých řádků?
-- Je stejné slovo, které se v odstavci opakuje (i v jiné větě), lemmatizováno pořád stejně?
+U každého řádku ve tvaru původní_tvar^základní_tvar prověř zejména:
+- Sloveso: je v infinitivu, bez záporky "ne-" a se stejným videm jako původní tvar ("prošlo" -> "projít", ne "procházet")? Lemma nikdy není v trpném rodu ("byl završen" -> "završit").
+- Sloveso vs. přídavné jméno, oprav záměnu v obou směrech: trpné příčestí jako přívlastek je přídavné jméno ("vystavěného prostředí" -> "vystavěný"); tvary jako "studující" jsou přídavná jména; slovesná podstatná jména ("uvedením") zůstávají podstatnými jmény ("uvedení").
+- Podstatné jméno: 1. pád jednotného čísla, u pomnožných jmen 1. pád množného čísla ("prázdninách" -> "prázdniny"). Zvlášť zkontroluj lemma opsané beze změny z tvaru, které je ve skutečnosti jiný pád ("lokalit" -> "lokalita").
+- Přídavné jméno a příslovce: 1. stupeň bez "nej-", i při nepravidelném stupňování ("dále" -> "daleko", "déle" -> "dlouho", "výše" -> "vysoko"). Příslovce zůstává příslovcem ("nově" -> "nově"), "ne-" u přídavných jmen zůstává ("nemovitý").
+- Zájmeno v základním tvaru ("tě" -> "ty", "ta" -> "ten"); neohebná slova beze změny a bez vymyšlených lemmat ("pak", "trochu", "nikoliv").
+- Velká písmena: lemma se píše malými písmeny, i když je tvar na začátku věty velký ("Cílem" -> "cíl"). Velké písmeno má jen tehdy, když se slovo píše vždy s velkým (vlastní jména: "Praha", "Karlův"), a římské číslice mají lemma vždy velkými písmeny ("ii" -> "II"). Velikost písmen původního tvaru na lemma nemá vliv.
+- Diakritika zůstává jako u standardního slovníkového lemmatu.
+- Řádky: počet řádků odpovídá přesně počtu slov a interpunkčních znamének v PŮVODNÍM TEXTU, ve stejném pořadí. Každý interpunkční znak je samostatný řádek (")." jsou dva řádky), číslo nebo římská číslice s tečkou ("19.", "ii.") jsou také dva řádky. Pokud návrh dvě slova sloučil nebo nějaké vynechal či zdvojil, řádky rozděl nebo doplň.
+- Konzistence: stejné slovo ve stejné funkci musí mít v celém odstavci stejné lemma.
 
-Pokud je řádek správně, přepiš ho beze změny. Pokud obsahuje chybu v základním tvaru, oprav pouze tuto část. Pokud návrh chybně sloučil dvě slova do jednoho řádku, nebo naopak nějaké slovo vynechal či zdvojil, řádky rozděl nebo doplň tak, aby přesně odpovídaly původnímu textu.
+Výstup: pouze opravené řádky ve formátu původní_tvar^základní_tvar, jeden pár na řádek, v původním pořadí, pro celý odstavec najednou. Nový odstavec v původním textu = prázdný řádek. Nepiš žádné odůvodnění, žádné nadpisy, žádné oddělovače vět - jen finální opravené řádky.
 
-Výstup: pouze opravené řádky ve formátu původní_tvar^základní_tvar, jeden pár na řádek, v původním pořadí, pro celý odstavec najednou. Nepiš žádné odůvodnění, žádné nadpisy, žádné oddělovače vět - jen finální opravené řádky.
+Níže jsou příklady správného výsledku pro daný text (bez návrhu).
 
 Příklad 1:
-PŮVODNÍ TEXT: "Nejstarší dcery vařily lepší guláš než jejich matky. Nikdo z rodiny ho ale nikdy nedojedl."
-NÁVRH:
-Nejstarší^Nejstarý
-dcery^dcera
-vařily^vařit
-lepší^lepší
-guláš^guláš
-než^než
-jejich^jejich
-matky^matka
+PŮVODNÍ TEXT: "V ii. etapě byla zástavba rozšířena. Vystavěné prostředí tak dále utvářelo studující (například v 19. století)."
+VÝSLEDEK:
+V^v
+ii^II
 .^.
-Nikdo^Nikdo
-z rodiny^z rodina
-ho^on
-ale^ale
-nikdy^nikdy
-nedojedl^nedojedl
+etapě^etapa
+byla^být
+zástavba^zástavba
+rozšířena^rozšířit
 .^.
-OPRAVENÝ VÝSLEDEK:
-Nejstarší^Starý
-dcery^dcera
-vařily^vařit
-lepší^dobrý
-guláš^guláš
-než^než
-jejich^jejich
-matky^matka
+Vystavěné^vystavěný
+prostředí^prostředí
+tak^tak
+dále^daleko
+utvářelo^utvářet
+studující^studující
+(^(
+například^například
+v^v
+19^19
 .^.
-Nikdo^Nikdo
-z^z
-rodiny^rodina
-ho^on
-ale^ale
-nikdy^nikdy
-nedojedl^dojíst
+století^století
+)^)
 .^.
 
 Příklad 2:
-PŮVODNÍ TEXT: "Ředitel podniku slíbil zaměstnancům vyšší mzdy. Zaměstnanci mu ale nevěřili a mzdy zůstaly stejné."
-NÁVRH:
-Ředitel^Ředitel
-podniku^podnik
-slíbil^slíbit
-zaměstnancům^zaměstnanec
-vyšší^vyšší
-mzdy^mzda
+PŮVODNÍ TEXT: "Univerzita Karlova uspořádala o prázdninách výstavu. Ředitel tě pak požádal o trochu času, nikoliv však o uvedení nemovitých památek."
+VÝSLEDEK:
+Univerzita^Univerzita
+Karlova^Karlův
+uspořádala^uspořádat
+o^o
+prázdninách^prázdniny
+výstavu^výstava
 .^.
-Zaměstnanci^Zaměstnankyně
-mu^on
-ale^ale
-nevěřili^věřit
+Ředitel^ředitel
+tě^ty
+pak^pak
+požádal^požádat
+o^o
+trochu^trochu
+času^čas
+,^,
+nikoliv^nikoliv
+však^však
+o^o
+uvedení^uvedení
+nemovitých^nemovitý
+památek^památka
+.^.
+
+Příklad 3:
+PŮVODNÍ TEXT (prázdná řádka znamená nový odstavec):
+"Praha se v 19. století rychle rozrůstala a nových lokalit stále přibývalo.
+
+Nejvíce lokalit vzniklo v městském prostředí, nově i výše po proudu řeky."
+VÝSLEDEK:
+Praha^Praha
+se^se
+v^v
+19^19
+.^.
+století^století
+rychle^rychle
+rozrůstala^rozrůstat
 a^a
-mzdy^mzda
-zůstaly^zůstat
-stejné^stejný
+nových^nový
+lokalit^lokalita
+stále^stále
+přibývalo^přibývat
 .^.
-OPRAVENÝ VÝSLEDEK:
-Ředitel^Ředitel
-podniku^podnik
-slíbil^slíbit
-zaměstnancům^zaměstnanec
-vyšší^vysoký
-mzdy^mzda
+
+Nejvíce^mnoho
+lokalit^lokalita
+vzniklo^vzniknout
+v^v
+městském^městský
+prostředí^prostředí
+,^,
+nově^nově
+i^i
+výše^vysoko
+po^po
+proudu^proud
+řeky^řeka
 .^.
-Zaměstnanci^Zaměstnanec
-mu^on
-ale^ale
-nevěřili^věřit
+
+Příklad 4:
+PŮVODNÍ TEXT: "Výzkum zaměřený na uvedená města byl završen. Nedocházelo k tomu dříve, a proto se dále nepokračovalo."
+VÝSLEDEK:
+Výzkum^výzkum
+zaměřený^zaměřený
+na^na
+uvedená^uvedený
+města^město
+byl^být
+završen^završit
+.^.
+Nedocházelo^docházet
+k^k
+tomu^ten
+dříve^brzy
+,^,
 a^a
-mzdy^mzda
-zůstaly^zůstat
-stejné^stejný
+proto^proto
+se^se
+dále^daleko
+nepokračovalo^pokračovat
 .^.
 
 Nyní zkontroluj a oprav následující:
-PŮVODNÍ TEXT:
-""" + original + """
+PŮVODNÍ TEXT (prázdná řádka znamená nový odstavec):
+""".concat(original).concat("""
 NÁVRH:
-                """;
+                """);
     }
     public String ENGLISH(String original) {
         return """
@@ -479,7 +555,7 @@ laughed^laugh
 .^.
 
 Now check and correct the following:
-ORIGINAL TEXT:
+ORIGINAL TEXT (blank line means new paragraph):
 """ + original + """
 DRAFT:
                 """;
@@ -582,7 +658,7 @@ Katzen^Katze
 .^.
 
 Prüfe und korrigiere nun Folgendes:
-URSPRÜNGLICHER TEXT:
+URSPRÜNGLICHER TEXT (Leerzeile bedeutet neuer Absatz):
 """ + original + """
 ENTWURF:
                """;
@@ -686,7 +762,7 @@ chceli^chcieť
 .^.
 
 Teraz skontroluj a oprav nasledujúce:
-PÔVODNÝ TEXT:
+PÔVODNÝ TEXT (prázdny riadok znamená nový odsek):
 """ + original + """
 NÁVRH:
                 """;

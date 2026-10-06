@@ -35,7 +35,7 @@ public class SparkAndLLMLemmatizerTest {
     private SparkLemmatizer sparkLemmatizer;
 
     private final LLMService LLMLemmatizer = new LLMService(
-            new LLMConf("^", 400)
+            new LLMConf("^", 500)
     );
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();
@@ -46,8 +46,8 @@ public class SparkAndLLMLemmatizerTest {
     @CsvSource({
             "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,cs",
             "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,cs",
-            "src/test/resources/en/inputs/1.txt,src/test/resources/en/expected/1.txt,en",
-            "src/test/resources/en/inputs/2.txt,src/test/resources/en/expected/2.txt,en"
+            "src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,cs",
+            "src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,cs"
     })
     @Order(1)
     void verifyThatLLMLemmatizerIsBetterThatSpark(String input, String expected, String lang) {

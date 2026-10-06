@@ -9,20 +9,26 @@ import java.util.List;
 import static cz.cvut.kbss.annotace.Tests.simpleRateTest;
 import static cz.cvut.kbss.annotace.TxtReader.getExpectedList;
 import static cz.cvut.kbss.annotace.TxtReader.getInputText;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CzechTextTest extends AbstractTextTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt",
-            "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt",
+            "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,1",
+            "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,1",
+            "src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,9",
+            "src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,8"
     })
     @Override
-    protected void testText(String input, String expected) {
+    protected void testText(String input, String expected, String expectedParagraphsCountParam) {
+        int expectedParagraphsCount = Integer.parseInt(expectedParagraphsCountParam);
         String text = getInputText(input);
         List<String> lemmas = getExpectedList(expected);
         LemmatizerResult result = lemmatizer.process(text, "cs");
+
         assertTrue(simpleRateTest(lemmas, result, 90));
+        assertEquals(expectedParagraphsCount, result.getResult().size(), "Paragraphs count mismatch");
     }
 }

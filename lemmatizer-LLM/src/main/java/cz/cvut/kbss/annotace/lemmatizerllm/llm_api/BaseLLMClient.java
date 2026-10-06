@@ -2,6 +2,7 @@ package cz.cvut.kbss.annotace.lemmatizerllm.llm_api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.cvut.kbss.annotace.lemmatizerllm.exception.TruncatedResponseException;
+import lombok.Setter;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -18,8 +19,11 @@ public abstract class BaseLLMClient implements LLMClient {
 
     private final String[] apiKey;
     private int currentIndex = 0;
-    private final int maxIndex;
+    protected final int maxIndex;
     private int attempts = 0;
+
+    @Setter
+    protected String model;
 
     public BaseLLMClient(String[] apiKey) {
         this.apiKey = apiKey;
@@ -27,15 +31,6 @@ public abstract class BaseLLMClient implements LLMClient {
             throw new IllegalArgumentException("API key is required");
         }
         this.maxIndex = apiKey.length - 1;
-    }
-
-    protected final String getApiKey() {
-        final String currentApiKey = apiKey[currentIndex];
-        ++currentIndex;
-        if (currentIndex > maxIndex) {
-            currentIndex = 0;
-        }
-        return currentApiKey;
     }
 
     private static final int MAX_TRUNCATION_RETRIES = 3;
@@ -93,9 +88,9 @@ public abstract class BaseLLMClient implements LLMClient {
                         time = time.replace("s", "");
                     }
                     while(time.endsWith("m")) {
-                        time = time.replace("s", "");
+                        time = time.replace("m", "");
                     }
-                    reserveResult = sendAgain(prompt, maxTokens, Double.parseDouble(time) * (ms ? 1 : 1000));
+                    reserveResult = sendAgain(prompt, maxTokens, 1.0 + Double.parseDouble(time) * (ms ? 1 : 1000));
                 }
                 else throw new RuntimeException("Error sending request: " + e.getMessage(), e);
             }
@@ -110,11 +105,24 @@ public abstract class BaseLLMClient implements LLMClient {
 
     private String sendAgain(String prompt, int maxTokens, double time) {
         try {
-            Thread.sleep(Math.min((long) Math.floor(time), 2_000));
+            Thread.sleep(Math.min((long) Math.floor(time), 60_001L));
         }
         catch (InterruptedException ignore) {}
         ++attempts;
         return send(prompt, maxTokens);
+    }
+
+    protected String getApiKey() {
+        final String currentApiKey = apiKey[currentIndex];
+        ++currentIndex;
+        if (currentIndex > maxIndex) {
+            currentIndex = 0;
+        }
+        return currentApiKey;
+    }
+
+    protected final String[] getApiKeys() {
+        return apiKey;
     }
 
     protected abstract HttpRequest buildRequest(String prompt, int maxTokens) throws Exception;

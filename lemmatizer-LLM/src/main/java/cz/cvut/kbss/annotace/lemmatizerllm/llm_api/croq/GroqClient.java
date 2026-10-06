@@ -6,13 +6,12 @@ import lombok.Setter;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GroqClient extends BaseLLMClient {
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-    @Setter
-    private String model;
 
     // openai/gpt-oss-20b and openai/gpt-oss-120b support "low" | "medium" | "high".
     // Groq's default is "medium", which eats a large chunk of max_tokens on hidden
@@ -22,9 +21,12 @@ public class GroqClient extends BaseLLMClient {
     @Setter
     private String reasoningEffort = "low";
 
+    private final Map<String, Integer> models = new HashMap<>();
+
     public GroqClient(String[] apiKey, String model) {
         super(apiKey);
         this.model = model != null ? model : "meta-llama/llama-prompt-guard-2-86m";
+        this.models.put(model, 0);
     }
 
     @Override
@@ -87,5 +89,25 @@ public class GroqClient extends BaseLLMClient {
             case "meta-llama/llama-prompt-guard-2-86m" -> 500;
             default -> 8192 * 2;
         };
+    }
+
+    @Override
+    public void setModel(String model) {
+        this.model = model;
+        if (!models.containsKey(model)) {
+            models.put(model, 0);
+        }
+    }
+
+    @Override
+    protected String getApiKey() {
+        Integer currentModelIndex = models.get(model);
+        final String currentApiKey = getApiKeys()[models.get(model)];
+        ++currentModelIndex;
+        if (currentModelIndex > maxIndex) {
+            currentModelIndex = 0;
+        }
+        models.put(model, currentModelIndex);
+        return currentApiKey;
     }
 }

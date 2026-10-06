@@ -8,11 +8,11 @@ abstract public class AbstractTextTest {
 
     protected AbstractTextTest() {
         lemmatizer = new LLMService(
-                new LLMConf("^", 400)
+                new LLMConf("^", 500)
         );
     }
 
     protected final LLMService lemmatizer;
 
-    protected abstract void testText(String input, String expected);
+    protected abstract void testText(String input, String expected, String expectedParagraphsCountParam);
 }
