@@ -9,7 +9,6 @@ import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.croq.GroqClient;
 import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -26,16 +25,8 @@ public class LLMService implements LemmatizerApi {
     private static final double GROWTH_EXPONENT = 1.12;
     private static final int MIN_TOKENS = 2048;
     private static final int MAX_TOKENS = 8192;
-
-
-    public LLMService(LLMConf conf) {
-        this.conf = conf;
-        this.singleLemmaResultFactory = new SingleLemmaResultFactory(conf.getDelimiter());
-    }
-
-    @Setter
     private LLMConf conf;
-
+    private final StringParser stringParser;
     private final PromptGenerator promptGenerator = new PromptGenerator(new LongPromptTexts());
     private final SingleLemmaResultFactory singleLemmaResultFactory;
     private Language language = Language.EN;
@@ -43,6 +34,22 @@ public class LLMService implements LemmatizerApi {
     private final GroqClient groqClient = new GroqClient(
             new String[]{System.getenv("GROQ_API_KEY"), System.getenv("GROQ_API_KEY_2")}, "openai/gpt-oss-20b"
     );
+
+    public LLMService(LLMConf conf) {
+        this.conf = conf;
+        this.singleLemmaResultFactory = new SingleLemmaResultFactory(conf.getDelimiter());
+        this.stringParser = new StringParser(conf.getDelimiter());
+    }
+
+    public void setConf(LLMConf conf) {
+        this.conf = conf;
+        this.stringParser.setDelimiter(conf.getDelimiter());
+    }
+
+    private void setLanguage(String shortcut) {
+        this.language = Language.valueOf(shortcut.toUpperCase());
+        promptGenerator.setLanguage(this.language);
+    }
 
     @Override
     public LemmatizerResult process(String text, String lang) {
@@ -67,11 +74,11 @@ public class LLMService implements LemmatizerApi {
                 }
                 final String prompt = promptGenerator.prompt(sentences[i]);
                 final String response = groqClient.send(prompt, getMaxTokens(sentences[i].length()));
-                paragraphResults.addAll(responseWordParser(response));
+                paragraphResults.addAll(stringParser.responseWordParser(response));
             }
             groqClient.setModel("openai/gpt-oss-120b");
 
-            final String prompt = promptGenerator.prompt(wordResultObserver(paragraphResults), paragraph);
+            final String prompt = promptGenerator.prompt(stringParser.wordResultObserver(paragraphResults), paragraph);
             final String response = groqClient.send(prompt, getMaxTokens(paragraph.length()));
             results.add(responseLemmaParser(response, paragraph));
         }
@@ -88,16 +95,13 @@ public class LLMService implements LemmatizerApi {
         return AbstractPromptTexts.SUPPORTED_LANGUAGES;
     }
 
-    private void setLanguage(String shortcut) {
-        this.language = Language.valueOf(shortcut.toUpperCase());
-        promptGenerator.setLanguage(this.language);
-    }
-
     private List<SingleLemmaResult> responseLemmaParser(String response, String paragraph) {
         List<SingleLemmaResult> result = new ArrayList<>();
         final String[] paragraphs = response.split("\n\n");
         for (final String paragraphResponse : paragraphs) {
-            final String[] lines = Arrays.stream(paragraphResponse.split("\n")).filter(s -> s.contains(conf.getDelimiter())).toArray(String[]::new);
+            final String[] lines = Arrays.stream(paragraphResponse.split("\n"))
+                    .filter(s -> s.contains(conf.getDelimiter()))
+                    .toArray(String[]::new);
             for (final String line : lines) {
                 if (line.isBlank()) continue;
 
@@ -106,38 +110,6 @@ public class LLMService implements LemmatizerApi {
         }
 
         return SingleLemmaResultFactory.addSpacesToLemma(result, paragraph);
-    }
-
-    private List<String> responseWordParser(String response) {
-        List<String> result = new ArrayList<>();
-        final String[] lines = Arrays.stream(response.split("\n")).filter(
-                s -> s.chars().filter(ch -> ch == conf.getDelimiter().toCharArray()[0]).count() == 1  //todo conf.delimiter().toCharArray()[0]
-        ).toArray(String[]::new);
-
-        boolean started = false;
-
-        for (String line : lines) {
-            if (line.isBlank() || line.length() < 3) {
-                if (!started) continue;
-                started = false;
-            }
-            else started = true;
-
-            while (line.endsWith(" ")) {
-                line = line.substring(0, line.length() - 1);
-            }
-
-            result.add(line);
-        }
-        return result;
-    }
-
-    private String wordResultObserver(List<String> paragraphResults) {
-        StringBuilder result = new StringBuilder();
-        for (final String paragraphResult : paragraphResults) {
-            result.append(paragraphResult.concat("\n"));
-        }
-        return result.toString();
     }
 
     private int getMaxTokens(int paragraphLength) {

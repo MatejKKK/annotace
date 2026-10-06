@@ -5,6 +5,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class MinuteTokensTest {
     private Double tested(String input) {
@@ -28,7 +29,14 @@ public class MinuteTokensTest {
     }
 
     static Stream<Arguments> multiParamProviderTokens() {
-        return MultiParamProviders.multiParamProviderTokens();
+        return Stream.of(
+                arguments("""
+                        java.lang.RuntimeException: Error sending request: API error: status=429, body={"error":{"message":"Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m2jqatmbe5gsxj6afjp7zd6d` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5420, Requested 2757. Please try again in 1.3275s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+                        """, 1_327.5),
+                arguments("""
+                        java.lang.RuntimeException: Error sending request: API error: status=429, body={"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m2jqatmbe5gsxj6afjp7zd6d` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5420, Requested 2757. Please try again in 670.5ms. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
+                        """, 670.5)
+        );
     }
 
     @ParameterizedTest

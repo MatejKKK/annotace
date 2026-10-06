@@ -1,3 +1,5 @@
+package text_extractor;
+
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -5,8 +7,19 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static text_extractor.Helper.ALL_KEPT;
+import static text_extractor.Helper.BREAK;
 
 class MultiParamProviders {
+
+    private final static String ONE_SPACE = " ";
+    private final static String TWO_SPACES = "  ";
+    private final static String THREE_SPACES = "   ";
+    private final static String FOUR_SPACES = "    ";
+    private final static String FIVE_SPACES = "     ";
+    private final static String SIX_SPACES = "      ";
+    private final static String SEVEN_SPACES = "       ";
+    private final static String EIGHT_SPACES = "        ";
 
     private static SingleLemmaResult simpleFactory(String token) {
         SingleLemmaResult result = new SingleLemmaResult();
@@ -25,15 +38,6 @@ class MultiParamProviders {
         result.setNegated(false);
         return result;
     }
-
-    private final static String ONE_SPACE = " ";
-    private final static String TWO_SPACES = "  ";
-    private final static String THREE_SPACES = "   ";
-    private final static String FOUR_SPACES = "    ";
-    private final static String FIVE_SPACES = "     ";
-    private final static String SIX_SPACES = "      ";
-    private final static String SEVEN_SPACES = "       ";
-    private final static String EIGHT_SPACES = "        ";
 
     static Stream<Arguments> multiParamProviderSpaces() {
         return Stream.of(
@@ -191,14 +195,91 @@ class MultiParamProviders {
         );
     }
 
-    static Stream<Arguments> multiParamProviderTokens() {
+    static String paragraphs(String... parts) {
+        return String.join(BREAK, parts);
+    }
+
+    static Stream<Arguments> multiParamProviderProcessTest() {
+        final String fourSentences = "The first sentence is exactly this long here. The second sentence is exactly this long too."
+                + " The third sentence is exactly this long also. The fourth sentence is exactly this long still.";
+        final String ninetyChars = "The first sentence of the paragraph is long enough. The second sentence of it is long too.";
+        final String longSentence = "This one single sentence is deliberately much longer than the limit for a sentence chunk"
+                + " so it has to stay whole";
+        final String longParagraph = "Alpha beta gamma delta epsilon zeta eta theta. Iota kappa lambda mu nu xi omicron pi."
+                + " Rho sigma tau upsilon phi chi psi omega. One two three four five six seven eight."
+                + " Nine ten eleven twelve thirteen fourteen.";
+        final String czech = paragraphs(
+                "Cílem knihy je popis fyzického prostředí hl. m. Prahy jako sídla v krajině."
+                        + " Kniha řeší stavby a prostor, který je obklopuje.",
+                "Druhá kapitola se zabývá historií města. Jak se utvářelo a jakými etapami prošlo?",
+                "Třetí kapitola popisuje současné uspořádání! Začíná strukturálním přístupem.");
+
+        //        description,                          text, surviving text, max paragraph, max sentence, paragraph chunks, sentence chunks
         return Stream.of(
-                arguments("""
-                        java.lang.RuntimeException: Error sending request: API error: status=429, body={"error":{"message":"Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01m2jqatmbe5gsxj6afjp7zd6d` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5420, Requested 2757. Please try again in 1.3275s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
-                        """, 1_327.5),
-                arguments("""
-                        java.lang.RuntimeException: Error sending request: API error: status=429, body={"error":{"message":"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m2jqatmbe5gsxj6afjp7zd6d` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5420, Requested 2757. Please try again in 670.5ms. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}
-                        """, 670.5)
+                // --- the smallest inputs ---
+                arguments("empty text",
+                        "", ALL_KEPT, 100, 50, 1, 0),
+                arguments("one short sentence",
+                        "Hello world.", ALL_KEPT, 100, 50, 1, 1),
+                arguments("one sentence without a terminator",
+                        "Hello world without terminator", ALL_KEPT, 100, 50, 1, 1),
+                arguments("whitespace-only paragraph",
+                        paragraphs("Before.", "   ", "After."), ALL_KEPT, 100, 100, 1, 1),
+
+                // --- sentences of one paragraph ---
+                arguments("sentences are merged up to the sentence limit",
+                        fourSentences, ALL_KEPT, 500, 100, 1, 2),
+                arguments("limit below two sentences: every sentence alone",
+                        fourSentences, ALL_KEPT, 500, 60, 1, 4),
+                arguments("a sentence longer than the limit stays whole between short ones",
+                        "Tiny start. " + longSentence + ". Tiny end.", ALL_KEPT, 500, 50, 1, 3),
+                arguments("two 26-character sentences are not glued into one (28 + 28 is not below 56)",
+                        "a".repeat(26) + ". " + "b".repeat(26), ALL_KEPT, 100, 30, 1, 2),
+                arguments("question marks, exclamation marks and line breaks",
+                        "Is it ready? Yes it is ready! Then we can start now.\nNew line sentence continues here and goes on.",
+                        ALL_KEPT, 100, 60, 1, 2),
+
+                // --- paragraphs ---
+                arguments("short paragraphs end up in one paragraph chunk and in one sentence chunk",
+                        paragraphs("Short one.", "Other short.", "Third one."), ALL_KEPT, 100, 100, 1, 1),
+                arguments("paragraph break counts towards the paragraph limit (48 + 4 + 48 > 96)",
+                        paragraphs("a".repeat(48), "b".repeat(48)), ALL_KEPT, 48, 100, 2, 2),
+                arguments("two paragraphs merge only below 0.9 * limit (56 > 54, although 56 <= 60)",
+                        paragraphs("a".repeat(24), "b".repeat(24)), ALL_KEPT, 100, 60, 1, 2),
+                arguments("paragraph limit keeps long paragraphs apart",
+                        paragraphs(ninetyChars, ninetyChars, ninetyChars), ALL_KEPT, 50, 100, 3, 3),
+                arguments("paragraph limit allows a pair, the sentence limit then separates them again",
+                        paragraphs(ninetyChars, ninetyChars, ninetyChars), ALL_KEPT, 100, 100, 2, 3),
+                arguments("an oversized paragraph is split by sentences, its neighbour is not touched",
+                        paragraphs(longParagraph, "Short tail paragraph."), ALL_KEPT, 60, 80, 2, 5),
+                arguments("tiny limits: nothing is merged, nothing is lost",
+                        paragraphs("aaa bbb.", "ccc ddd."), ALL_KEPT, 1, 1, 2, 2),
+                arguments("empty paragraph between two paragraphs",
+                        "Before the gap there is a sentence of some length." + BREAK + BREAK
+                                + "After the gap there is a sentence of some length.",
+                        ALL_KEPT, 100, 200, 1, 1),
+                arguments("leading and trailing paragraph break",
+                        BREAK + "Only real paragraph here with a sentence of some length." + BREAK,
+                        ALL_KEPT, 100, 200, 1, 1),
+
+                // --- content that is changed on purpose ---
+                arguments("bracket content is removed",
+                        "The book (see chapter 3. Details) describes the city. Next (🡪 3.1) sentence follows here"
+                                + " and is long enough to matter." + BREAK + "Second paragraph (with a note) ends here.",
+                        "The book describes the city. Next sentence follows here and is long enough to matter."
+                                + BREAK + "Second paragraph ends here.",
+                        100, 80, 1, 3),
+
+                // --- realistic text ---
+                arguments("Czech text with an abbreviation and three paragraphs",
+                        czech, ALL_KEPT, 150, 120, 1, 4)
         );
+    }
+
+    /** Limits {maxParagraphLength, maxSentenceLength} from "everything alone" to "everything in one chunk". */
+    static Stream<Arguments> multiParamProviderProcessLimits() {
+        return Stream.of(
+                arguments(1, 1), arguments(10, 20), arguments(30, 40), arguments(50, 60),
+                arguments(100, 100), arguments(200, 150), arguments(10_000, 10_000));
     }
 }

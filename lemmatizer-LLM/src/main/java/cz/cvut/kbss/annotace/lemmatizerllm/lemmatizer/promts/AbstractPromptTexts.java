@@ -3,7 +3,7 @@ package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts;
 import java.util.List;
 
 public abstract sealed class AbstractPromptTexts permits LongPromptTexts {
-    public final static List<String> SUPPORTED_LANGUAGES = List.of("en", "cz", "sk", "de");
+    public final static List<String> SUPPORTED_LANGUAGES = List.of("en", "cz", "sk", "de", "cs");
 
     public abstract String CZECH();
     public abstract String ENGLISH();
