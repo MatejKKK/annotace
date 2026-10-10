@@ -8,7 +8,7 @@ abstract public class AbstractTextTest {
 
     protected AbstractTextTest() {
         lemmatizer = new LLMService(
-                new LLMConf("^", 500)
+                new LLMConf("^", 750, true)
         );
     }
 

@@ -242,14 +242,22 @@ class MultiParamProviders {
                 // --- paragraphs ---
                 arguments("short paragraphs end up in one paragraph chunk and in one sentence chunk",
                         paragraphs("Short one.", "Other short.", "Third one."), ALL_KEPT, 100, 100, 1, 1),
-                arguments("paragraph break counts towards the paragraph limit (48 + 4 + 48 > 96)",
-                        paragraphs("a".repeat(48), "b".repeat(48)), ALL_KEPT, 48, 100, 2, 2),
-                arguments("two paragraphs merge only below 0.9 * limit (56 > 54, although 56 <= 60)",
-                        paragraphs("a".repeat(24), "b".repeat(24)), ALL_KEPT, 100, 60, 1, 2),
+                // The merge mark counts towards the paragraph limit (2 * 45 = 90): 37 + 16 + 37 fits, 40 + 16 + 40 does not
+                // (it would fit with the 4-character paragraph break the mark replaced).
+                arguments("paragraphs merge when they fit together with the merge mark exactly",
+                        paragraphs("a".repeat(37), "b".repeat(37)), ALL_KEPT, 45, 100, 1, 1),
+                arguments("paragraphs stay apart when the merge mark makes them one character too long",
+                        paragraphs("a".repeat(38), "b".repeat(37)), ALL_KEPT, 45, 100, 2, 2),
+                // After merging there is no paragraph break left, so the two paragraphs form one stretch of text
+                // and the join (no space after the dot) is not a sentence boundary: they become ONE sentence.
+                arguments("the join of two merged paragraphs does not split sentences, even when they end with a dot",
+                        paragraphs("Alpha one is here.", "Beta two is here."), ALL_KEPT, 100, 100, 1, 1),
+                arguments("the glued sentence of a merged pair may exceed the sentence limit",
+                        paragraphs("a".repeat(24), "b".repeat(24)), ALL_KEPT, 100, 60, 1, 1),
                 arguments("paragraph limit keeps long paragraphs apart",
                         paragraphs(ninetyChars, ninetyChars, ninetyChars), ALL_KEPT, 50, 100, 3, 3),
-                arguments("paragraph limit allows a pair, the sentence limit then separates them again",
-                        paragraphs(ninetyChars, ninetyChars, ninetyChars), ALL_KEPT, 100, 100, 2, 3),
+                arguments("paragraph limit allows a pair, whose join glues two sentences into a longer one",
+                        paragraphs(ninetyChars, ninetyChars, ninetyChars), ALL_KEPT, 100, 100, 2, 4),
                 arguments("an oversized paragraph is split by sentences, its neighbour is not touched",
                         paragraphs(longParagraph, "Short tail paragraph."), ALL_KEPT, 60, 80, 2, 5),
                 arguments("tiny limits: nothing is merged, nothing is lost",
@@ -268,11 +276,12 @@ class MultiParamProviders {
                                 + " and is long enough to matter." + BREAK + "Second paragraph (with a note) ends here.",
                         "The book describes the city. Next sentence follows here and is long enough to matter."
                                 + BREAK + "Second paragraph ends here.",
-                        100, 80, 1, 3),
+                        100, 80, 1, 2),
 
                 // --- realistic text ---
+                // 126 + 82 + 76 characters + 2 marks = 316 > 300: the first paragraph stays alone, the other two merge.
                 arguments("Czech text with an abbreviation and three paragraphs",
-                        czech, ALL_KEPT, 150, 120, 1, 4)
+                        czech, ALL_KEPT, 150, 120, 2, 5)
         );
     }
 

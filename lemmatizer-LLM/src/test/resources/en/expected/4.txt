@@ -262,7 +262,7 @@ the //// the
 capital //// Capital
 city //// City
 of //// of
-prague //// Prague
+Prague //// Prague
 , //// ,
 an //// an
 area //// area

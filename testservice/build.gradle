@@ -17,4 +17,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    jvmArgs "-Djava.library.path=/Users/matej/actual/projekt3/nové repo/annotace"
+    systemProperty 'morphodita.model', '/Users/matej/actual/projekt3/nové repo/annotace/czech-morfflex2.1-pdtc2.0-250909.tagger'
+
+    testLogging {
+        showStandardStreams = true   // uvidíš System.out z testů
+    }
+    doFirst {
+        println ">>> jvmArgs testu: ${jvmArgs}"
+    }
 }

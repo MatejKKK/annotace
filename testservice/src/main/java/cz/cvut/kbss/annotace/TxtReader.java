@@ -30,7 +30,7 @@ public class TxtReader {
             String line = br.readLine();
 
             while (line != null) {
-                if (line.startsWith("//// ") || line.startsWith(" //// ")) {
+                if (line.startsWith(" ////") || line.startsWith("////")) {
                     line = br.readLine();
                     continue;
                 }

@@ -11,7 +11,7 @@ belief //// belief
 : //// :
 that //// that
 the //// the
-american //// American
+American //// American
 educational //// educational
 system //// system
 of //// of
@@ -71,7 +71,7 @@ institution //// institution
 in //// In
 1860 //// 1860
 , //// ,
-MIT’s //// MIT’s
+MIT //// MIT’s
 found //// founding
 president //// President
 william //// William
@@ -127,7 +127,7 @@ and //// and
 allocate //// allocated
 land //// land
 in //// in
-Boston’s //// Boston’s
+Boston //// Boston’s
 back //// Back
 bay //// Bay
 , //// ,
@@ -182,7 +182,7 @@ war //// war
 congress //// Congress
 pass //// passed
 the //// the
-morrill //// Morrill
+Morrill //// Morrill
 land //// Land
 grant //// Grant
 act //// Act
@@ -207,7 +207,7 @@ and //// and
 senator //// senator
 in //// in
 a //// a
-state’s //// state’s
+state //// state’s
 congressional //// congressional
 delegation //// delegation
 — //// —

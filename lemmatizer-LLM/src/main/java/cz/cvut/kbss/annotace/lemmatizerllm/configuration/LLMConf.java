@@ -1,16 +1,17 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.configuration;
 
-import lombok.Getter;
-
-@Getter
-public class LLMConf {
-    private final String delimiter;
-    private final int maxSentenceLength;
-    private final int maxParagraphLength;
-
-    public LLMConf(String delimiter, int maxSentenceLength) {
-        this.delimiter = delimiter;
-        this.maxSentenceLength = maxSentenceLength;
-        this.maxParagraphLength = (int) Math.floor(20. * maxSentenceLength / Math.log(maxSentenceLength));
+public record LLMConf (
+        String delimiter,
+        int maxSentenceLength,
+        int maxParagraphLength,
+        boolean usePostProcessing
+) {
+    public LLMConf(String delimiter, int maxSentenceLength, boolean usePostProcessing) {
+        this(
+                delimiter,
+                maxSentenceLength,
+                (int) Math.floor(maxSentenceLength * Math.pow(1.1, maxSentenceLength)),
+                usePostProcessing
+        );
     }
 }

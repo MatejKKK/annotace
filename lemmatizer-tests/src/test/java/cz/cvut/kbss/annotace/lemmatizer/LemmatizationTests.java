@@ -36,7 +36,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 // To enable, specify java.library.path containing libmorphodita_java.so (in build.gradle) and set
 // absolute paths to taggers in src/test/resources/application.yml
-@Disabled
+//@Disabled
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
     classes = {MorphoditaConf.class, SparkConf.class, MorphoDitaServiceJNI.class, SparkLemmatizer.class})

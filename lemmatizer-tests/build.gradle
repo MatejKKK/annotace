@@ -17,11 +17,28 @@ dependencies {
     testImplementation(libs.spring.boot.test) {
         exclude group: "org.junit.vintage", module: "junit-vintage-engine"
     }
-    implementation "cz.cvut.kbss:morphodita:0.0.1"
+    def localMorphoJar = rootProject.file('morphodita.jar')
+    if (localMorphoJar.exists()) {
+        implementation files(localMorphoJar)
+    } else {
+        implementation "cz.cvut.kbss:morphodita:0.0.1"
+    }
 }
 
 test {
-    jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.nio=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED"
+    def root = rootProject.projectDir.absolutePath
+    jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.nio=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED", "-Djava.library.path=${root}"
+
+    def czModel = file("${root}/czech-morfflex2.1-pdtc2.0-250909.tagger")
+    if (czModel.exists()) {
+        systemProperty 'annotace.morphodita.taggers.cs', czModel.absolutePath
+    }
+
+    if (!System.getenv('NAZEV_PROMENNE_S_KLICEM')) {
+        exclude '**/SparkAndLLMLemmatizerTest*'
+    }
+
+    testLogging { events "passed", "skipped", "failed" }
 }
 
 //--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED

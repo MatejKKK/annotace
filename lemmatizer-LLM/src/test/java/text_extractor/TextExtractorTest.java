@@ -1,7 +1,7 @@
 package text_extractor;
 
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.TextExtractor;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.SingleLemmaResultFactory;
+import cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextExtractor;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleSingleLemmaResultFactory;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.TextExtractor.*;
+import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextExtractor.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static text_extractor.Helper.*;
 
@@ -89,7 +89,7 @@ public class TextExtractorTest {
     @ParameterizedTest
     @MethodSource("multiParamProviderSpaces")
     void lemmaSpacesTest(String paragraph, List<SingleLemmaResult> input, List<SingleLemmaResult> expected) {
-        List<SingleLemmaResult> result = SingleLemmaResultFactory.addSpacesToLemma(input, paragraph);
+        List<SingleLemmaResult> result = SimpleSingleLemmaResultFactory.addSpacesToLemmas(input, paragraph);
 
         result.forEach(singleLemmaResult ->
             assertTrue(expected.stream().anyMatch(e ->
@@ -110,9 +110,14 @@ public class TextExtractorTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("multiParamProviderProcessTest")
     void wholeProcessKeepsTheTextAndRespectsTheLimits(
-            String description, String text, String survivingText,
-            int maxParagraphLength, int maxSentenceLength, int expectedParagraphChunks, int expectedSentenceChunks) {
-
+            String description,
+            String text,
+            String survivingText,
+            int maxParagraphLength,
+            int maxSentenceLength,
+            int expectedParagraphChunks,
+            int expectedSentenceChunks
+    ) {
         // The same calls as in the lemmatizer.
         final String[] paragraphChunks = mergeParagraphs(extractParagraphs(text), maxParagraphLength * 2);
 
@@ -128,8 +133,12 @@ public class TextExtractorTest {
         assertLimitRespected(paragraphChunks, extractParagraphs(text), maxParagraphLength * 2, description);
         for (final String chunk : allSentenceChunks) {
             assertFalse(chunk.isBlank(), description + ": no chunk may be blank");
-            assertFalse(chunk.startsWith(BREAK), description + ": no chunk may start with a paragraph break");
+            assertFalse(chunk.contains(BREAK), description + ": a paragraph chunk never contains a paragraph break");
         }
+
+        assertMergeMarksJoinOriginalParagraphs(paragraphChunks, extractParagraphs(text).size(), description);
+        assertEquals(count(String.join("", paragraphChunks), PARAGRAPH_MERGE_MARK), count(String.join("", allSentenceChunks), PARAGRAPH_MERGE_MARK),
+                description + ": merge marks must survive the sentence extraction");
 
         assertEquals(content(survivingText == null ? text : survivingText), content(String.join("", allSentenceChunks)),
                 description + ": text must be neither lost nor reordered");
@@ -160,6 +169,7 @@ public class TextExtractorTest {
             allSentenceChunks.addAll(Arrays.asList(mergeSentences(extractSentences(paragraphChunk), maxSentenceLength)));
         }
 
+        assertMergeMarksJoinOriginalParagraphs(paragraphChunks, extractParagraphs(text).size(), "unique words");
         assertChunksFormTheSequence(Arrays.asList(paragraphChunks), wordCount, "paragraph chunks");
         assertChunksFormTheSequence(allSentenceChunks, wordCount, "sentence chunks");
     }

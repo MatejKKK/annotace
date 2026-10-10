@@ -2,7 +2,7 @@ package cz.cvut.kbss.annotace.lemmatizer;
 
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
-import cz.cvut.kbss.annotace.configuration.SparkConf;
+import cz.cvut.kbss.annotace.configuration.MorphoditaConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
@@ -28,11 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
-        classes = {SparkConf.class, SparkLemmatizer.class})
+        classes = {MorphoditaConf.class, MorphoDitaServiceJNI.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class SparkAndLLMLemmatizerTest {
+public class MorphoDitaAndLLMLemmatizerTest {
     @Autowired
-    private SparkLemmatizer sparkLemmatizer;
+    private MorphoDitaServiceJNI morphoditaLemmatizer;
 
     private final LLMService LLMLemmatizer = new LLMService(
             new LLMConf("^", 750, true)
@@ -44,7 +44,7 @@ public class SparkAndLLMLemmatizerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/en/inputs/1.txt,src/test/resources/en/expected/1.txt,en",
+            "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,cs",
             "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,cs",
             "src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,cs",
             "src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,cs"
@@ -56,7 +56,7 @@ public class SparkAndLLMLemmatizerTest {
         String text = getInputText(input);
         List<String> lemmas = getExpectedList(expected);
 
-        LemmatizerResult minResult = sparkLemmatizer.process(text, lang);
+        LemmatizerResult minResult = morphoditaLemmatizer.process(text, lang);
         CorrectAndTotal sparkResult = getCounts(lemmas, minResult);
 
         LemmatizerResult actualResult = LLMLemmatizer.process(text, lang);

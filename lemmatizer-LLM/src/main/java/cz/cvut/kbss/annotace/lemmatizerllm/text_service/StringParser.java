@@ -1,4 +1,4 @@
-package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
+package cz.cvut.kbss.annotace.lemmatizerllm.text_service;
 
 import lombok.AllArgsConstructor;
 import lombok.Setter;
@@ -8,12 +8,12 @@ import java.util.Arrays;
 import java.util.List;
 
 @AllArgsConstructor
-class StringParser {
+public class StringParser {
 
     @Setter
     private String delimiter;
 
-    List<String> responseWordParser(String response) {
+    public List<String> responseWordParser(String response) {
         List<String> result = new ArrayList<>();
         final String[] lines = Arrays.stream(response.split("\n")).filter(
                 s -> s.contains(delimiter)
@@ -37,11 +37,21 @@ class StringParser {
         return result;
     }
 
-    String wordResultObserver(List<String> paragraphResults) {
+    public String wordResultObserver(List<String> paragraphResults) {
         StringBuilder result = new StringBuilder();
         for (final String paragraphResult : paragraphResults) {
             result.append(paragraphResult.concat("\n"));
         }
         return result.toString();
+    }
+
+    public static String removeBorderSpaces(String input) {
+        while (input.startsWith(" ")) {
+            input = input.substring(1);
+        }
+        while (input.endsWith(" ")) {
+            input = input.substring(0, input.length() - 1);
+        }
+        return input;
     }
 }

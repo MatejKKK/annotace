@@ -1,48 +1,48 @@
-package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
+package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory;
 
+import cz.cvut.kbss.annotace.lemmatizerllm.model.Language;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
 import java.util.List;
 
-public class SingleLemmaResultFactory {
+import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser.removeBorderSpaces;
 
-    private final String delimiter;
+public abstract class SingleLemmaResultFactory {
 
-    public SingleLemmaResultFactory(String delimiter) {
-        this.delimiter = "\\" + delimiter;
+    protected String delimiter;
+
+    protected SingleLemmaResultFactory(String delimiter) {
+        this.delimiter = "\\".concat(delimiter);
     }
 
-    public SingleLemmaResult createSingleLemmaResult(String line) {
-        SingleLemmaResult singleLemmaResult = parseSingleLemmaResult(line);
-        singleLemmaResult.setNegated(false);
-        return singleLemmaResult;
-    }
+    public abstract List<SingleLemmaResult> createSingleLemmaResult(String line);
+
+    public abstract void setLanguage(Language language);
 
     protected final SingleLemmaResult parseSingleLemmaResult(String line) {
         while (line.endsWith(" ")) {
             line = line.substring(0, line.length() - 1);
         }
         String[] words = line.split(delimiter);
-        final SingleLemmaResult result = new SingleLemmaResult();
+        String token, lemma;
 
         if (words.length == 2) {
-            result.setToken(words[0]);
-            result.setLemma(words[1]);
-            return result;
+            token = words[0];
+            lemma = words[1];
         }
         else if (words.length == 4) {
-            result.setToken(words[0].concat(words[1]));
-            result.setLemma(words[2].concat(words[3]));
-            return result;
+            token = words[0].concat(words[1]);
+            lemma = words[2].concat(words[3]);
         }
         else if (words.length > 0) {
-            result.setToken(words[0]);
-            result.setLemma(words[0]);
-            return result;
+            token = words[0];
+            lemma = words[0];
         }
-        result.setToken("");
-        result.setLemma("");
-        return result;
+        else {
+            token = "";
+            lemma = "";
+        }
+        return new SingleLemmaResult(removeBorderSpaces(token), removeBorderSpaces(lemma), false);
     }
 
     private static String getLeadingSpaces(int index, String originalParagraph) {
@@ -72,7 +72,7 @@ public class SingleLemmaResultFactory {
         return spaces.toString();
     }
 
-    public static List<SingleLemmaResult> addSpacesToLemma(List<SingleLemmaResult> paragraph, String originalParagraph) {
+    public static List<SingleLemmaResult> addSpacesToLemmas(List<SingleLemmaResult> paragraph, String originalParagraph) {
         int lastIndex = 0;
 
         for (final SingleLemmaResult lemma : paragraph) {

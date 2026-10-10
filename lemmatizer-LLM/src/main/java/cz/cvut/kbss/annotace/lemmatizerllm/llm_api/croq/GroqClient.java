@@ -32,6 +32,7 @@ public class GroqClient extends BaseLLMClient {
     @Override
     protected HttpRequest buildRequest(String prompt, int maxTokens) throws Exception {
         if (model.contains("120b")) { System.out.println("tokens: " + maxTokens); }
+        System.out.println(model + ": " + prompt);
         String jsonBody = objectMapper.writeValueAsString(
                 new GroqRequest(
                         model,

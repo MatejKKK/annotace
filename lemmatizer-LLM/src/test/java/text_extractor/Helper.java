@@ -1,6 +1,9 @@
 package text_extractor;
 
+import cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextExtractor;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -83,5 +86,21 @@ class Helper {
             paragraphs.add(paragraph.toString().strip());
         }
         return MultiParamProviders.paragraphs(paragraphs.toArray(String[]::new));
+    }
+
+    static int count(String text, String part) {
+        return (text.length() - text.replace(part, "").length()) / part.length();
+    }
+
+    /**
+     * Merged paragraphs are joined by exactly one mark per join: n original paragraphs in k chunks need
+     * n - k marks, and a mark is never left dangling at the end of a chunk.
+     */
+    static void assertMergeMarksJoinOriginalParagraphs(String[] paragraphChunks, int originalParagraphCount, String description) {
+        assertEquals(originalParagraphCount - paragraphChunks.length, count(String.join("", paragraphChunks), TextExtractor.PARAGRAPH_MERGE_MARK),
+                description + ": number of merge marks");
+        for (String chunk : paragraphChunks) {
+            assertFalse(chunk.endsWith(TextExtractor.PARAGRAPH_MERGE_MARK), description + ": a merge mark may not end a chunk: " + chunk);
+        }
     }
 }

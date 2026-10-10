@@ -1,4 +1,4 @@
-package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
+package cz.cvut.kbss.annotace.lemmatizerllm.text_service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +14,22 @@ public class TextExtractor {
 
     /** Paragraph separator. Text split into paragraphs is always rejoined with exactly this string. */
     private static final String PARAGRAPH_BREAK = "\n\n\n\n";
+
+    /**
+     * Marker appended by {@link #mergeParagraphs} to the end of every original paragraph that is
+     * followed, inside the same merged result, by another original paragraph. Distinct from
+     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source text, only
+     * where {@link #mergeParagraphs} glued two originally separate paragraphs together.
+     */
+    public static final String PARAGRAPH_MERGE_MARK = "9348435854367645";
+
+    /**
+     * Marker appended by {@link #mergeParagraphs} to the end of every original paragraph that is
+     * followed, inside the same merged result, by another original paragraph. Distinct from
+     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source text, only
+     * where {@link #mergeParagraphs} glued two originally separate paragraphs together.
+     */
+    public static final String PARAGRAPH_MERGE_MARK_LINE = PARAGRAPH_MERGE_MARK + "^" + PARAGRAPH_MERGE_MARK;
 
     /**
      * Shrink factor applied, per extra paragraph, to the length cap when {@link #mergeSentences}
@@ -135,16 +151,34 @@ public class TextExtractor {
     /**
      * Merges paragraphs into the shortest possible list where every merged paragraph has a length of
      * at most maxParahgraphLength. Unlike sentences, paragraphs have no forbidden boundary, so any
-     * neighbours may be merged; merged paragraphs are rejoined with {@value #PARAGRAPH_BREAK} so the
-     * boundary stays visible in the resulting text.
+     * neighbours may be merged. Whenever two original paragraphs end up next to each other inside the
+     * same merged result, {@value #PARAGRAPH_MERGE_MARK} is appended to the end of the first one, so
+     * that join stays recognisable in the resulting text.
      *
      * @param paragraphs is array of every single paragraph
      * @return merged paragraphs
      */
     public static String[] mergeParagraphs(List<String> paragraphs, int maxParahgraphLength) {
         final List<IndexedText> orders = index(paragraphs);
-        final List<LengthOrder> merged = mergeLengths(toLengths(orders), PARAGRAPH_BREAK.length(), n -> maxParahgraphLength);
-        return toMergedArray(merged, textByOrder(orders), PARAGRAPH_BREAK);
+        final List<LengthOrder> merged = mergeLengths(toLengths(orders), PARAGRAPH_MERGE_MARK.length(), n -> maxParahgraphLength);
+        final Map<Integer, String> textByOrder = textByOrder(orders);
+
+        return merged.stream()
+                .map(group -> appendMarkBetweenMembers(group.orders(), textByOrder))
+                .toArray(String[]::new);
+    }
+
+    /** Concatenates a merged group's original paragraphs, appending {@value #PARAGRAPH_MERGE_MARK} after every member that is followed by another member of the same group. */
+    private static String appendMarkBetweenMembers(List<Integer> groupOrders, Map<Integer, String> textByOrder) {
+        final StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < groupOrders.size(); i++) {
+            result.append(textByOrder.get(groupOrders.get(i)));
+            if (i < groupOrders.size() - 1) {
+                result.append(PARAGRAPH_MERGE_MARK);
+            }
+        }
+        return result.toString();
     }
 
     /**

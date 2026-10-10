@@ -8,6 +8,22 @@ import java.util.List;
 
 public class Tests {
 
+    private static class CorrectResult {
+        private final String correctLemma;
+        private boolean used = false;
+
+        private CorrectResult(String correctLemma) {
+            this.correctLemma = correctLemma;
+        }
+
+        private boolean isSame(String actualLemma) {
+            if (used) return false;
+            boolean result = correctLemma.equals(actualLemma) || correctLemma.equals(actualLemma.toLowerCase());
+            used = result;
+            return result;
+        }
+    }
+
     public static CorrectAndTotal getCounts(final List<String> correctLemmas, final LemmatizerResult result) {
         long correct = 0, total = 0;
         for (final List<SingleLemmaResult> it : result.getResult()) {
@@ -46,6 +62,91 @@ public class Tests {
         );
         System.out.println(
                 counts.correct() + " of them was lemmatizered correctly. This makes precision " + rate + "% which is " +
+                        (success ? "higher (or equal)" : "lower") + " than success rate (" +  successRate + "%)."
+        );
+
+        return success;
+    }
+
+    public static boolean completeRateTest(
+            List<String> correctLemmas,
+            String originalText,
+            LemmatizerResult result,
+            double successRate,
+            int basePositionTolerance
+    ) {
+        if (successRate <= 0. || successRate > 100.)
+            throw new IllegalArgumentException("Percentage has to be between 0 and 100.");
+        if (basePositionTolerance < 0)
+            throw new IllegalArgumentException("basePositionTolerance cannot be negative.");
+        if (basePositionTolerance >= correctLemmas.size())
+            throw new IllegalArgumentException("Tolerance cannot be larger than correct list length.");
+        if (result.getResult().isEmpty() || result.getResult().stream().anyMatch(List::isEmpty))
+            throw new AssertionError("Empty result");
+
+
+        boolean sameSize = true; //todo
+
+        if (!sameSize) {
+            System.out.println("Sizes of expected and actual lists are too much different.");
+            return false;
+        }
+
+        List<SingleLemmaResult> singleLemmaResults = result.getResult().stream()
+                .flatMap(Collection::stream)
+                .toList();
+
+        int total = singleLemmaResults.size();
+        int diff = correctLemmas.size() - total;
+
+//        System.out.println(originalText);
+//
+//        singleLemmaResults.forEach(singleLemmaResult ->
+//            System.out.println(originalText.contains(singleLemmaResult.getToken()) + ": " + singleLemmaResult.getToken())
+//        );
+
+        List<String> actual = singleLemmaResults.stream()
+                .filter(it -> originalText.contains(it.getToken()))
+                .map(SingleLemmaResult::getLemma)
+                .toList();
+
+        int tolerance = (int) (basePositionTolerance + Math.ceil(Math.sqrt(correctLemmas.size())));
+
+        final List<CorrectResult> expected = List.copyOf(
+                correctLemmas.stream().map(CorrectResult::new).toList()
+                );
+
+        diff = Math.max(diff, 0);
+        int correct = 0;
+
+        System.out.println("Expected lemmas: ");
+        expected.forEach(it -> System.out.println(it.correctLemma));
+
+        for (int i = 0; i < actual.size(); ++i) {
+            String actualLemma = actual.get(i);
+            System.out.println(actualLemma);
+
+            int lowBound = Math.max(i - tolerance, 0);
+            int highBound = Math.min(i + tolerance + diff, expected.size() - 1);
+
+            for (int j = lowBound; j <= highBound; ++j) {
+                if (expected.get(j).isSame(actualLemma)) {
+                    ++correct;
+                    System.out.println("correct: " + actualLemma + " on position " + i);
+                    j = highBound + 1;
+                }
+            }
+        }
+
+        final double rate = 100. * correct / total;
+        final boolean success = rate >= successRate;
+
+        System.out.println(
+                "Tested " + result.getResult().size() + (result.getResult().size() == 1 ? " paragraph including " : " paragraps including ") +
+                        total + " words, dots and commas."
+        );
+        System.out.println(
+                correct + " of them was lemmatizered correctly. This makes precision " + rate + "% which is " +
                         (success ? "higher (or equal)" : "lower") + " than success rate (" +  successRate + "%)."
         );
 

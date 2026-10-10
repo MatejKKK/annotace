@@ -308,7 +308,7 @@ U každého řádku ve tvaru původní_tvar^základní_tvar prověř zejména:
 - Řádky: počet řádků odpovídá přesně počtu slov a interpunkčních znamének v PŮVODNÍM TEXTU, ve stejném pořadí. Každý interpunkční znak je samostatný řádek (")." jsou dva řádky), číslo nebo římská číslice s tečkou ("19.", "ii.") jsou také dva řádky. Pokud návrh dvě slova sloučil nebo nějaké vynechal či zdvojil, řádky rozděl nebo doplň.
 - Konzistence: stejné slovo ve stejné funkci musí mít v celém odstavci stejné lemma.
 
-Výstup: pouze opravené řádky ve formátu původní_tvar^základní_tvar, jeden pár na řádek, v původním pořadí, pro celý odstavec najednou. Nový odstavec v původním textu = prázdný řádek. Nepiš žádné odůvodnění, žádné nadpisy, žádné oddělovače vět - jen finální opravené řádky.
+Výstup: pouze opravené řádky ve formátu původní_tvar^základní_tvar, jeden pár na řádek, v původním pořadí, pro celý odstavec najednou. Nepiš žádné odůvodnění, žádné nadpisy, žádné oddělovače vět - jen finální opravené řádky.
 
 Níže jsou příklady správného výsledku pro daný text (bez návrhu).
 
@@ -446,34 +446,10 @@ For every line in the form original_form-base_form, check in particular:
 
 If a line is already correct, copy it unchanged. If it contains an error in the base form, fix only that part. If the draft wrongly merged two words into one line, or omitted or duplicated a word, split or add lines so they exactly match the original text.
 
-Output: only the corrected lines in the format original_form^base_form, one pair per line, in the original order, for the whole paragraph at once. Do not write any explanation, headers, or sentence separators - just the final corrected lines.
+Output: only the corrected lines in the format original_form^base_form, one pair per line, in the original order. Do not write any explanation, headers, or sentence separators - just the final corrected lines.
 
 Example 1:
 ORIGINAL TEXT: "The two brothers were the strongest players on the team. Their coach said the younger boys had tried harder than anyone."
-DRAFT:
-The^The
-two^two
-brothers^brother
-were^be
-the^the
-strongest^strongest
-players^player
-on^on
-the^the
-team^team
-.^.
-Their^Their
-coach^coach
-said^say
-the^the
-younger^younger
-boys^boy
-had^have
-tried^tried
-harder^harder
-than^than
-anyone^anyone
-.^.
 CORRECTED RESULT:
 The^The
 two^two
@@ -501,32 +477,6 @@ anyone^anyone
 
 Example 2:
 ORIGINAL TEXT: "The children wore muddier shoes than usual, and their trousers looked worse too. Nobody noticed until the teacher saw them and laughed."
-DRAFT:
-The^The
-children^child
-wore^wear
-muddier^muddy
-shoes^shoe
-than^than
-usual^usual
-,^,
-and^and
-their^their
-trousers^trouser
-looked^look
-worse^worse
-too^too
-.^.
-Nobody^Nobody
-noticed^notice
-until^until
-the^the
-teacher^teacher
-saw^saw
-them^they
-and^and
-laughed^laugh
-.^.
 CORRECTED RESULT:
 The^The
 children^child
@@ -582,31 +532,6 @@ Ausgabe: nur die korrigierten Zeilen im Format Originalform^Grundform, ein Paar 
 
 Beispiel 1:
 URSPRÜNGLICHER TEXT: "Die Köchin kochte die besten Suppen in dem ganzen Dorf. Ihre Gäste kamen jede Woche wieder und lobten sie lauter als früher."
-ENTWURF:
-Die^Die
-Köchin^Köchin
-kochte^kochen
-die^der
-besten^besten
-Suppen^Suppe
-in^in
-dem^der
-ganzen^ganz
-Dorf^Dorf
-.^.
-Ihre^Ihre
-Gäste^Gäste
-kamen^kommen
-jede^jeder
-Woche^Woche
-wieder^wieder
-und^und
-lobten^loben
-sie^sie
-lauter^lauter
-als^als
-früher^frühere
-.^.
 KORRIGIERTES ERGEBNIS:
 Die^Die
 Köchin^Köchin
@@ -635,16 +560,6 @@ früher^früh
 
 Beispiel 2:
 URSPRÜNGLICHER TEXT: "Der kleine Hund lief schneller als die großen Katzen."
-ENTWURF:
-Der^Der
-kleine^klein
-Hund^Hund
-lief^laufen
-schneller^schneller
-als^als
-die^die
-großen Katzen^groß Katze
-.^.
 KORRIGIERTES ERGEBNIS:
 Der^Der
 kleine^klein
@@ -685,29 +600,6 @@ Výstup: len opravené riadky vo formáte pôvodný_tvar^základný_tvar, jeden 
 
 Príklad 1:
 PÔVODNÝ TEXT: "Naši najlepší predavači predali viac tovaru než minulý rok. Zákazníci si ale sťažovali, že ceny boli vyššie ako predtým."
-NÁVRH:
-Naši^Náš
-najlepší^najlepší
-predavači^predavač
-predali^predať
-viac^viac
-tovaru^tovar
-než^než
-minulý^minulý
-rok^rok
-.^.
-Zákazníci^Zákazník
-si^si
-ale^ale
-sťažovali^sťažovať
-,^,
-že^že
-ceny^cena
-boli^byť
-vyššie^vyššie
-ako^ako
-predtým^predtým
-.^.
 OPRAVENÝ VÝSLEDOK:
 Naši^Náš
 najlepší^dobrý
@@ -734,19 +626,6 @@ predtým^predtým
 
 Príklad 2:
 PÔVODNÝ TEXT: "Bez nožníc si dievčatá nemohli ostrihať vlasy tak krátko, ako chceli."
-NÁVRH:
-Bez^Bez
-nožníc^nožnica
-si^si
-dievčatá^dievča
-nemohli^nemohli
-ostrihať^ostrihať
-vlasy^vlasy
-tak^tak
-krátko^krátko
-ako^ako
-chceli^chcieť
-.^.
 OPRAVENÝ VÝSLEDOK:
 Bez^Bez
 nožníc^nožnice

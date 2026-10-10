@@ -20,6 +20,13 @@ subprojects {
                 languageVersion = JavaLanguageVersion.of(21)
             }
         }
+        tasks.withType(Test).configureEach {
+            def root = rootProject.projectDir.absolutePath
+            jvmArgs "-Djava.library.path=${root}"
+            if (file("${root}/czech-morfflex2.1-pdtc2.0-250909.tagger").exists()) {
+                systemProperty 'annotace.morphodita.taggers.cs', "${root}/czech-morfflex2.1-pdtc2.0-250909.tagger"
+            }
+        }
     }
 
     apply plugin: "java"
@@ -63,5 +70,21 @@ subprojects {
         testImplementation(libs.junit.api)
         testRuntimeOnly(libs.junit.engine)
         testRuntimeOnly(libs.junit.platform.launcher)
+    }
+}
+
+ext {
+    morphoLibDir = file("${rootProject.projectDir}/CESTA_Z_ECHO")
+    morphoJar    = file("${rootProject.projectDir}/morphodita.jar")
+    morphoModel  = file("${rootProject.projectDir}/czech-morfflex2.1-pdtc2.0-250909.tagger")
+
+    configureMorphodita = { p ->
+        p.dependencies.add('implementation', p.files(morphoJar))
+        [JavaExec, Test].each { type ->
+            p.tasks.withType(type).configureEach {
+                jvmArgs "-Djava.library.path=${morphoLibDir.absolutePath}"
+                systemProperty 'morphodita.model', morphoModel.absolutePath
+            }
+        }
     }
 }

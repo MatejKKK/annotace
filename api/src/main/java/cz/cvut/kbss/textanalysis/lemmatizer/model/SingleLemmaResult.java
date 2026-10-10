@@ -18,8 +18,10 @@
 package cz.cvut.kbss.textanalysis.lemmatizer.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class SingleLemmaResult {
 
     private String token;
@@ -31,4 +33,10 @@ public class SingleLemmaResult {
     private String trailingSpaces = "";
 
     private boolean negated;
+
+    public SingleLemmaResult(String token, String lemma, boolean negated) {
+        this.token = token;
+        this.lemma = lemma;
+        this.negated = negated;
+    }
 }

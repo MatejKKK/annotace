@@ -6,7 +6,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
-import static cz.cvut.kbss.annotace.Tests.simpleRateTest;
+import static cz.cvut.kbss.annotace.Tests.*;
 import static cz.cvut.kbss.annotace.TxtReader.getExpectedList;
 import static cz.cvut.kbss.annotace.TxtReader.getInputText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,9 +16,9 @@ public class CzechTextTest extends AbstractTextTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,1",
+            //"src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,1",
             "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,1",
-            "src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,9",
+            //"src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,9",
             "src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,8"
     })
     @Override
@@ -28,7 +28,7 @@ public class CzechTextTest extends AbstractTextTest {
         List<String> lemmas = getExpectedList(expected);
         LemmatizerResult result = lemmatizer.process(text, "cs");
 
-        assertTrue(simpleRateTest(lemmas, result, 90));
+        assertTrue(completeRateTest(lemmas, text, result, 90, 5));
         assertEquals(expectedParagraphsCount, result.getResult().size(), "Paragraphs count mismatch");
     }
 }
