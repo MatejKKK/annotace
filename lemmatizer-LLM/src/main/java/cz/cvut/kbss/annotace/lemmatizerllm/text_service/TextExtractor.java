@@ -7,13 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntToDoubleFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class TextExtractor {
 
     /** Paragraph separator. Text split into paragraphs is always rejoined with exactly this string. */
-    private static final String PARAGRAPH_BREAK = "\n\n\n\n";
+    public static final String PARAGRAPH_BREAK = "\n\n\n\n";
 
     /**
      * Marker appended by {@link #mergeParagraphs} to the end of every original paragraph that is
@@ -32,11 +34,15 @@ public class TextExtractor {
     public static final String PARAGRAPH_MERGE_MARK_LINE = PARAGRAPH_MERGE_MARK + "^" + PARAGRAPH_MERGE_MARK;
 
     /**
-     * Shrink factor applied, per extra paragraph, to the length cap when {@link #mergeSentences}
-     * merges whole paragraphs together: merging n paragraphs must fit into
-     * {@code maxSentenceLength * PARAGRAPH_MERGE_DECAY^(n-1)}.
+     * Shrink factor applied, per extra paragraph, to the length cap when whole paragraphs are merged
+     * together (by {@link #mergeParagraphs} and by {@link #mergeSentences}): merging n paragraphs must
+     * fit into {@code maxLength * PARAGRAPH_MERGE_DECAY^(n-1)}.
      */
-    private static final double PARAGRAPH_MERGE_DECAY = 0.9;
+    public static final double PARAGRAPH_MERGE_DECAY = 0.9;
+
+    /** What separates paragraphs: a real one in the source text, or the one left by {@link #mergeParagraphs}. */
+    private static final Pattern PARAGRAPH_BOUNDARY =
+            Pattern.compile(Pattern.quote(PARAGRAPH_BREAK) + "|" + Pattern.quote(PARAGRAPH_MERGE_MARK));
 
     /** One text unit (a sentence or a paragraph) together with its original position. */
     private record IndexedText(String text, int order) { }
@@ -77,26 +83,60 @@ public class TextExtractor {
     }
 
     /**
-     * Splits text into single sentences. The text may consist of several paragraphs (see
-     * {@link #extractParagraphs}); sentences are extracted paragraph by paragraph and flattened into
-     * one list, but the separator is kept attached to the end of the last sentence of every
-     * non-final paragraph, so the paragraph boundary stays recognisable later (see {@link #mergeSentences}).
+     * Splits a group of paragraphs (typically one result of {@link #mergeParagraphs}) into single
+     * sentences. The group is first cut into its partial paragraphs at every
+     * {@value #PARAGRAPH_MERGE_MARK} (or {@value #PARAGRAPH_BREAK}); a sentence never spans such a
+     * boundary. The sentences of all partial paragraphs are flattened into one list, but the separator
+     * stays attached to the end of the last sentence of every non-final partial paragraph, so the
+     * boundary stays recognisable later (see {@link #mergeSentences}) and no text is lost.
+     * A separator of an empty partial paragraph is attached to the previous sentence (or, when there is
+     * none yet, to the next one); separators at the very end of the text are dropped.
      */
-    public static List<String> extractSentences(String paragraph) {
-        final List<String> paragraphs = extractParagraphs(paragraph);
+    public static List<String> extractSentences(String paragraphGroup) {
+        final List<String> paragraphs = new ArrayList<>();
+        final List<String> separators = new ArrayList<>(); // separators.get(i) follows paragraphs.get(i)
+        splitOnParagraphBoundaries(paragraphGroup, paragraphs, separators);
+
         final List<String> result = new ArrayList<>();
+        String separatorsBeforeFirstSentence = "";
 
         for (int i = 0; i < paragraphs.size(); i++) {
             final List<String> sentences = extractSentencesFromParagraph(paragraphs.get(i));
-            final boolean hasMoreParagraphs = i < paragraphs.size() - 1;
+            final String separator = separators.get(i);
 
-            if (hasMoreParagraphs && !sentences.isEmpty()) {
-                final int lastIndex = sentences.size() - 1;
-                sentences.set(lastIndex, sentences.get(lastIndex) + PARAGRAPH_BREAK);
+            if (sentences.isEmpty()) {
+                if (result.isEmpty()) {
+                    separatorsBeforeFirstSentence += separator;
+                } else {
+                    result.set(result.size() - 1, result.getLast() + separator);
+                }
+                continue;
             }
+            sentences.set(0, separatorsBeforeFirstSentence + sentences.getFirst());
+            separatorsBeforeFirstSentence = "";
+            sentences.set(sentences.size() - 1, sentences.getLast() + separator);
             result.addAll(sentences);
         }
         return result;
+    }
+
+    private static void splitOnParagraphBoundaries(String text, List<String> paragraphs, List<String> separators) {
+        final Matcher matcher = PARAGRAPH_BOUNDARY.matcher(text);
+        int start = 0;
+
+        while (matcher.find()) {
+            paragraphs.add(text.substring(start, matcher.start()));
+            separators.add(matcher.group());
+            start = matcher.end();
+        }
+        paragraphs.add(text.substring(start));
+        separators.add("");
+
+        while (paragraphs.size() > 1 && paragraphs.getLast().isEmpty()) {
+            paragraphs.removeLast();
+            separators.removeLast();
+            separators.set(separators.size() - 1, "");
+        }
     }
 
     /** Extracts a single paragraph (no {@value #PARAGRAPH_BREAK} inside it) into single sentences. */
@@ -149,18 +189,21 @@ public class TextExtractor {
     }
 
     /**
-     * Merges paragraphs into the shortest possible list where every merged paragraph has a length of
-     * at most maxParahgraphLength. Unlike sentences, paragraphs have no forbidden boundary, so any
-     * neighbours may be merged. Whenever two original paragraphs end up next to each other inside the
-     * same merged result, {@value #PARAGRAPH_MERGE_MARK} is appended to the end of the first one, so
-     * that join stays recognisable in the resulting text.
+     * Merges paragraphs into the shortest possible list where every merged paragraph made of n original
+     * paragraphs has a length of at most {@code maxParahgraphLength * PARAGRAPH_MERGE_DECAY^(n-1)}
+     * (a single paragraph may be longer, it is never split). The length of a merged paragraph includes
+     * the {@value #PARAGRAPH_MERGE_MARK}s between its members. Unlike sentences, paragraphs have no
+     * forbidden boundary, so any neighbours may be merged. Whenever two original paragraphs end up next
+     * to each other inside the same merged result, {@value #PARAGRAPH_MERGE_MARK} is appended to the end
+     * of the first one, so that join stays recognisable in the resulting text.
      *
      * @param paragraphs is array of every single paragraph
      * @return merged paragraphs
      */
     public static String[] mergeParagraphs(List<String> paragraphs, int maxParahgraphLength) {
         final List<IndexedText> orders = index(paragraphs);
-        final List<LengthOrder> merged = mergeLengths(toLengths(orders), PARAGRAPH_MERGE_MARK.length(), n -> maxParahgraphLength);
+        final List<LengthOrder> merged = mergeLengths(
+                toLengths(orders), PARAGRAPH_MERGE_MARK.length(), limitShrinkingWithGroupSize(maxParahgraphLength));
         final Map<Integer, String> textByOrder = textByOrder(orders);
 
         return merged.stream()
@@ -207,29 +250,31 @@ public class TextExtractor {
     }
 
     /**
-     * Merges sentences into the shortest possible list where every merged sentence has a length of
-     * at most maxSentenceLength. This happens in two steps:
+     * Merges the sentences of one group of paragraphs (see {@link #extractSentences}) into the shortest
+     * possible list where every merged sentence has a length of at most maxSentenceLength. This happens
+     * in two steps:
      * <ol>
-     *   <li>Sentences are first grouped within their own paragraph (never across a
-     *       {@value #PARAGRAPH_BREAK} boundary, see {@link #extractSentences}), exactly like before.</li>
-     *   <li>A paragraph whose sentences all fit into a single group of step 1 (i.e. the whole paragraph
-     *       is at most maxSentenceLength long) may then be merged further with its neighbouring
-     *       paragraphs, provided they are likewise single-group. Merging n such paragraphs together
-     *       must fit into {@code maxSentenceLength * PARAGRAPH_MERGE_DECAY^(n-1)}, so the allowed
-     *       length shrinks with every extra paragraph pulled in. A paragraph that needed more than one
-     *       group in step 1 is left untouched and blocks this cross-paragraph merging on both sides,
-     *       the same way a {@value #PARAGRAPH_BREAK} blocks step 1.</li>
+     *   <li>Sentences are first grouped within their own partial paragraph (never across a boundary,
+     *       i.e. after a sentence that ends with {@value #PARAGRAPH_MERGE_MARK} or
+     *       {@value #PARAGRAPH_BREAK}), with the constant limit maxSentenceLength.</li>
+     *   <li>A partial paragraph whose sentences all fit into a single group of step 1 (i.e. the whole
+     *       partial paragraph is at most maxSentenceLength long) may then be merged further with its
+     *       neighbouring partial paragraphs of the same group, provided they are likewise single-group.
+     *       Merging n such paragraphs together must fit into
+     *       {@code maxSentenceLength * PARAGRAPH_MERGE_DECAY^(n-1)}, so the allowed length shrinks with
+     *       every extra paragraph pulled in. A partial paragraph that needed more than one group in
+     *       step 1 is left untouched and blocks this cross-paragraph merging on both sides, the same way
+     *       a boundary blocks step 1.</li>
      * </ol>
-     * Whenever whole paragraphs end up merged, the {@value #PARAGRAPH_BREAK} between them does not
-     * need to be re-inserted: it is already embedded in the text, carried over from
-     * {@link #extractSentences}.
+     * Whenever whole paragraphs end up merged, the boundary between them does not need to be
+     * re-inserted: it is already embedded in the text, carried over from {@link #extractSentences}.
      *
      * @param sentences is array of every single sentence
      * @return merged sentences
      */
     public static String[] mergeSentences(List<String> sentences, int maxSentenceLength) {
         final List<IndexedText> orders = index(sentences);
-        final List<List<IndexedText>> paragraphs = splitOnParagraphBreak(orders);
+        final List<List<IndexedText>> paragraphs = splitOnParagraphBoundary(orders);
 
         final List<LengthOrder> result = new ArrayList<>();
         final List<LengthOrder> wholeParagraphsPendingMerge = new ArrayList<>();
@@ -257,9 +302,17 @@ public class TextExtractor {
     /** Runs step 2 on a run of adjacent single-group paragraphs, appends the resulting merges, then clears the run so the next one starts fresh. */
     private static void mergeAndAppendWholeParagraphs(List<LengthOrder> pendingParagraphs, int maxSentenceLength, List<LengthOrder> result) {
         if (!pendingParagraphs.isEmpty()) {
-            result.addAll(mergeLengths(pendingParagraphs, 0, n -> maxSentenceLength * Math.pow(PARAGRAPH_MERGE_DECAY, n - 1)));
+            result.addAll(mergeLengths(pendingParagraphs, 0, limitShrinkingWithGroupSize(maxSentenceLength)));
             pendingParagraphs.clear();
         }
+    }
+
+    /**
+     * Length cap of a group of n merged paragraphs: {@code maxLength * PARAGRAPH_MERGE_DECAY^(n < 2 ? 0 : n)}.
+     * So for 1 paragraph is it maxLength, for more it is maxLength * PARAGRAPH_MERGE_DECAY^(n).
+     * */
+    private static IntToDoubleFunction limitShrinkingWithGroupSize(int maxLength) {
+        return n -> maxLength * Math.pow(PARAGRAPH_MERGE_DECAY, n < 2 ? 0 : n);
     }
 
     private static List<IndexedText> index(List<String> texts) {
@@ -278,14 +331,14 @@ public class TextExtractor {
                 .toList();
     }
 
-    /** Cuts the sentence list into segments wherever a sentence ends with {@value #PARAGRAPH_BREAK}, so that such a sentence always ends its segment and can never be merged with what follows it. */
-    private static List<List<IndexedText>> splitOnParagraphBreak(List<IndexedText> orders) {
+    /** Cuts the sentence list into segments (partial paragraphs) wherever a sentence ends with {@value #PARAGRAPH_MERGE_MARK} or {@value #PARAGRAPH_BREAK}, so that such a sentence always ends its segment and can never be merged with what follows it in step 1. */
+    private static List<List<IndexedText>> splitOnParagraphBoundary(List<IndexedText> orders) {
         final List<List<IndexedText>> segments = new ArrayList<>();
         List<IndexedText> current = new ArrayList<>();
 
         for (IndexedText unit : orders) {
             current.add(unit);
-            if (unit.text().endsWith(PARAGRAPH_BREAK)) {
+            if (unit.text().endsWith(PARAGRAPH_MERGE_MARK) || unit.text().endsWith(PARAGRAPH_BREAK)) {
                 segments.add(current);
                 current = new ArrayList<>();
             }

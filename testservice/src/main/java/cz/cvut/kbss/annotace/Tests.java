@@ -84,17 +84,20 @@ public class Tests {
         if (result.getResult().isEmpty() || result.getResult().stream().anyMatch(List::isEmpty))
             throw new AssertionError("Empty result");
 
-
-        boolean sameSize = true; //todo
-
-        if (!sameSize) {
-            System.out.println("Sizes of expected and actual lists are too much different.");
-            return false;
-        }
-
         List<SingleLemmaResult> singleLemmaResults = result.getResult().stream()
                 .flatMap(Collection::stream)
                 .toList();
+
+        boolean sameSize = Math.abs(
+                correctLemmas.size() - singleLemmaResults.size()
+        ) <= correctLemmas.size() / 25.0;
+
+        if (!sameSize) {
+            System.out.println("Sizes of expected and actual lists are too much different.");
+            System.out.println("Expected count of lemmas was " + correctLemmas.size() + " but founded " + singleLemmaResults.size());
+            return false;
+        }
+
 
         int total = singleLemmaResults.size();
         int diff = correctLemmas.size() - total;
@@ -163,14 +166,39 @@ public class Tests {
                 Math.sqrt(dispersion);
     }
 
-    public static boolean statisticsTest(CorrectAndTotal expectedCounts, CorrectAndTotal actualCounts, double alfaInPercentages) {
+    public static double testingStatistic(int large, int small) {
+        final double rate = (double) small / large;
 
-        if (expectedCounts.rate() <= actualCounts.rate()) return true;  //One-side test does not have any price in this case.
+        final double dispersion = (small * ((1. - rate) * (1. - rate)) +
+                (large - small) * rate * rate)
+                / (large - 1);
+
+        return Math.sqrt(large) *
+                (rate - 1.) /   //reason why testingStatistic is smaller than 0
+                Math.sqrt(dispersion);
+    }
+
+    public static boolean statisticsOneDirectTest(CorrectAndTotal expectedCounts, CorrectAndTotal actualCounts, double alfaInPercentages) {
+
+        if (expectedCounts.rate() <= actualCounts.rate()) return true;  //One-direct test does not have any price in this case.
 
         final double invertedAlpha = 1. - (alfaInPercentages * 0.01);
         final double testingStatistic = testingStatistic(actualCounts, expectedCounts.rate());
         final double quantile = -Distributions.studentQuantile(actualCounts.total() - 1, invertedAlpha);
 
         return testingStatistic >= quantile;
+    }
+
+    public static boolean statisticsBiDirectTest(int actualN, int n, double alfaInPercentages) {
+        final int large = Math.max(actualN, n);
+        final int small = Math.min(actualN, n);
+
+        if (Math.abs(large - small) <= 1) return true;
+
+        final double invertedAlpha = (1. - (alfaInPercentages * 0.005));
+        final double testingStatistic = testingStatistic(large, small);
+        final double quantile = Distributions.studentQuantile(large - 1, invertedAlpha);
+
+        return Math.abs(testingStatistic) <= quantile;
     }
 }

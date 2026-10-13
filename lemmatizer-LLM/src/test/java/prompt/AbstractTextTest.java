@@ -8,7 +8,7 @@ abstract public class AbstractTextTest {
 
     protected AbstractTextTest() {
         lemmatizer = new LLMService(
-                new LLMConf("^", 750, true)
+                new LLMConf("GROQ", "^", "500", "true", "GROQ_API_KEY,GROQ_API_KEY_2")
         );
     }
 

@@ -7,14 +7,14 @@ import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
 import java.util.List;
 
-public class PostprocessedSingleLemmaResultFactory extends SingleLemmaResultFactory {
+public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
 
     private final static String[] BRACKETS = {"(", ")", "[", "]", "<", ">", "{", "}", "\"", "\""};
-    private final static String[] SYMBOLS = {",", ".", "\"", "-", "–", ":", "'"};
+    private final static String[] SYMBOLS = {",", ".", "\"", "-", "–", ":", "'", "“"};
 
     private SublemmaProcessor sublemmaProcessor;
 
-    public PostprocessedSingleLemmaResultFactory(String delimiter, Language language) {
+    public PostprocessedLemmaResultFactory(String delimiter, Language language) {
         super(delimiter);
         setLanguage(language);
     }

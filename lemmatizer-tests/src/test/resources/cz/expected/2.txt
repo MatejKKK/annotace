@@ -26,7 +26,7 @@ kniha //// Kniha
 stavba //// stavby
 a //// a
 prostor //// prostor
- //// 
+, //// ,
 který //// který
 on //// je
 obklopovat //// obklopuje
@@ -64,13 +64,13 @@ kniha //// knihou
 100 //// 100
 | //// |
 krajina //// Krajina
- //// 
+, //// ,
 a //// a
 ten //// to !!!!velmi kontroverzní pravidlo
 zejména //// zejména
 v //// v
 téma //// tématech
- //// 
+, //// ,
 u //// u
 který //// kterých
 nelze //// nelze
@@ -92,11 +92,11 @@ vývoj //// vývoji
 fyzický //// fyzického
 vystavěný //// vystavěného
 prostředí //// prostředí
- //// 
+, //// ,
 o //// o
 jeho //// jeho
 hodnota //// hodnotách
- //// 
+, //// ,
 a //// a
 daleko //// dále
 o //// o
@@ -127,7 +127,7 @@ rozsah //// rozsahu
 lokalita //// lokalit
 městský //// městské
 krajina //// krajiny
- //// 
+, //// ,
 a //// a
 ten //// to
 zejména //// zejména
@@ -143,7 +143,7 @@ být //// je
 řešený //// řešené
 území //// území
 rozšířený //// rozšířeno
- //// 
+, //// ,
 aby //// aby
 docházet //// nedocházelo
 k //// k
@@ -157,7 +157,7 @@ začínat //// začíná
 úvodní //// úvodní
 kapitola //// kapitolou
 1 //// 1
- //// 
+, //// ,
 který //// která
 kromě //// kromě
 celkový //// celkového
@@ -188,7 +188,7 @@ kapitola //// kapitolou
 Vývoj //// Vývoj
 vystavěný //// vystavěného
 prostředí //// prostředí
- //// 
+, //// ,
 který //// která
 popisovat //// popisuje
 historie //// historii
@@ -255,7 +255,7 @@ pomoc //// pomocí
 strukturálně //// strukturálně
 zaměřený //// zaměřeného
 přístup //// přístupu
- //// 
+, //// ,
 postavený //// postaveného
 na //// na
 převažující //// převažujícím
@@ -289,7 +289,7 @@ pomocí //// pomocí
 analýza //// analýzy
 veřejný //// veřejné
 přístupnost //// přístupnosti
- //// 
+, //// ,
 uliční //// uličních
 prostranství //// prostranství
 a //// a
@@ -311,19 +311,19 @@ podmínka //// podmínkami
 🡪 //// 🡪
 3.4 //// 3.4
 ) //// )
- //// 
+, //// ,
 který //// které
 se //// se
 zaobírat //// zaobírají
 téma //// tématy
 historický //// historických
 veduta //// vedut
- //// 
+, //// ,
 významný //// významných
 pohled //// pohledů
 na //// na
 město //// město
- //// 
+, //// ,
 a //// a
 stavební //// stavebních
 dominanta //// dominant
@@ -344,7 +344,7 @@ vzniknout //// vznikla
 nový //// nová
 podoba //// podoba
 aplikace //// aplikace
- //// 
+, //// ,
 kde //// kde
 být //// je
 možný //// možné

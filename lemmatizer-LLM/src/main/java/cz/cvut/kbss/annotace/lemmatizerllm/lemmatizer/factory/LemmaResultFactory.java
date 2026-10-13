@@ -7,11 +7,11 @@ import java.util.List;
 
 import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser.removeBorderSpaces;
 
-public abstract class SingleLemmaResultFactory {
+public abstract class LemmaResultFactory {
 
     protected String delimiter;
 
-    protected SingleLemmaResultFactory(String delimiter) {
+    protected LemmaResultFactory(String delimiter) {
         this.delimiter = "\\".concat(delimiter);
     }
 

@@ -1,7 +1,7 @@
 package text_extractor;
 
 import cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextExtractor;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleSingleLemmaResultFactory;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleLemmaResultFactory;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -89,7 +89,7 @@ public class TextExtractorTest {
     @ParameterizedTest
     @MethodSource("multiParamProviderSpaces")
     void lemmaSpacesTest(String paragraph, List<SingleLemmaResult> input, List<SingleLemmaResult> expected) {
-        List<SingleLemmaResult> result = SimpleSingleLemmaResultFactory.addSpacesToLemmas(input, paragraph);
+        List<SingleLemmaResult> result = SimpleLemmaResultFactory.addSpacesToLemmas(input, paragraph);
 
         result.forEach(singleLemmaResult ->
             assertTrue(expected.stream().anyMatch(e ->
@@ -118,6 +118,7 @@ public class TextExtractorTest {
             int expectedParagraphChunks,
             int expectedSentenceChunks
     ) {
+
         // The same calls as in the lemmatizer.
         final String[] paragraphChunks = mergeParagraphs(extractParagraphs(text), maxParagraphLength * 2);
 
@@ -131,15 +132,16 @@ public class TextExtractorTest {
         }
 
         assertLimitRespected(paragraphChunks, extractParagraphs(text), maxParagraphLength * 2, description);
+        assertParagraphChunksAreTheOriginalParagraphs(paragraphChunks, extractParagraphs(text), description);
         for (final String chunk : allSentenceChunks) {
             assertFalse(chunk.isBlank(), description + ": no chunk may be blank");
-            assertFalse(chunk.contains(BREAK), description + ": a paragraph chunk never contains a paragraph break");
+            assertFalse(chunk.contains(BREAK), description + ": a chunk never contains a paragraph break");
         }
 
-        assertMergeMarksJoinOriginalParagraphs(paragraphChunks, extractParagraphs(text).size(), description);
-        assertEquals(count(String.join("", paragraphChunks), PARAGRAPH_MERGE_MARK), count(String.join("", allSentenceChunks), PARAGRAPH_MERGE_MARK),
-                description + ": merge marks must survive the sentence extraction");
-
+        // PARAGRAPH_MERGE_MARK is no paragraph or sentence boundary, so it stays inside the sentence chunks.
+        assertEquals(count(String.join("", paragraphChunks), PARAGRAPH_MERGE_MARK),
+                count(String.join("", allSentenceChunks), PARAGRAPH_MERGE_MARK),
+                description + ": PARAGRAPH_MERGE_MARK must survive the sentence extraction");
         assertEquals(content(survivingText == null ? text : survivingText), content(String.join("", allSentenceChunks)),
                 description + ": text must be neither lost nor reordered");
         assertEquals(expectedParagraphChunks, paragraphChunks.length, description + ": paragraph chunks");

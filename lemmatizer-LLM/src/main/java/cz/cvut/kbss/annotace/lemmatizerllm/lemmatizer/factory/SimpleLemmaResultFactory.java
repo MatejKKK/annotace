@@ -5,9 +5,9 @@ import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
 import java.util.List;
 
-public class SimpleSingleLemmaResultFactory extends SingleLemmaResultFactory {
+public class SimpleLemmaResultFactory extends LemmaResultFactory {
 
-    public SimpleSingleLemmaResultFactory(String delimiter) {
+    public SimpleLemmaResultFactory(String delimiter) {
         super(delimiter);
     }
 

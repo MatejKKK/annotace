@@ -1,5 +1,6 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.llm_api.croq;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.BaseLLMClient;
 import cz.cvut.kbss.annotace.lemmatizerllm.exception.TruncatedResponseException;
 import lombok.Setter;
@@ -10,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GroqClient extends BaseLLMClient {
+public final class GroqClient extends BaseLLMClient {
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     // openai/gpt-oss-20b and openai/gpt-oss-120b support "low" | "medium" | "high".
@@ -30,7 +31,7 @@ public class GroqClient extends BaseLLMClient {
     }
 
     @Override
-    protected HttpRequest buildRequest(String prompt, int maxTokens) throws Exception {
+    protected HttpRequest buildRequest(String prompt, int maxTokens) throws JsonProcessingException {
         if (model.contains("120b")) { System.out.println("tokens: " + maxTokens); }
         System.out.println(model + ": " + prompt);
         String jsonBody = objectMapper.writeValueAsString(
@@ -51,7 +52,7 @@ public class GroqClient extends BaseLLMClient {
     }
 
     @Override
-    protected String extractAnswer(String jsonResponse) throws Exception {
+    protected String extractAnswer(String jsonResponse) throws JsonProcessingException {
         GroqResponse response = objectMapper.readValue(jsonResponse, GroqResponse.class);
         List<GroqResponse.Choice> choices = response.choices();
 

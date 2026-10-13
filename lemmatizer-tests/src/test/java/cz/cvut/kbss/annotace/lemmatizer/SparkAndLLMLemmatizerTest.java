@@ -35,7 +35,7 @@ public class SparkAndLLMLemmatizerTest {
     private SparkLemmatizer sparkLemmatizer;
 
     private final LLMService LLMLemmatizer = new LLMService(
-            new LLMConf("^", 750, true)
+            new LLMConf("CROQ","^", "750", "true")
     );
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();
@@ -69,7 +69,7 @@ public class SparkAndLLMLemmatizerTest {
                 " and and actual rate is: " + LLMResult.rate());
 
         assertTrue(
-                Tests.statisticsTest(sparkResult, LLMResult, APLHA),
+                Tests.statisticsOneDirectTest(sparkResult, LLMResult, APLHA),
                 "Zero hypothesis (that LLM lemmatizer is better or same than Spark lemmatizer) is rejected in favor of an alternative hypothesis (that LLM lemmatizer is worse than Spark lemmatizer) " +
                         "on level " + APLHA + "%."
         );

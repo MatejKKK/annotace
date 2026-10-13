@@ -1,9 +1,12 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.llm_api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.cvut.kbss.annotace.lemmatizerllm.exception.TruncatedResponseException;
 import lombok.Setter;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -20,7 +23,6 @@ public abstract class BaseLLMClient implements LLMClient {
     private final String[] apiKey;
     private int currentIndex = 0;
     protected final int maxIndex;
-    private int attempts = 0;
 
     @Setter
     protected String model;
@@ -41,75 +43,29 @@ public abstract class BaseLLMClient implements LLMClient {
     }
 
     @Override
-    public String send(String prompt, int maxTokens) throws RuntimeException {
+    public String send(String prompt, int maxTokens) {
         if (prompt == null || prompt.isBlank()) {
             throw new RuntimeException("Prompt cannot be null or empty");
         }
 
-        int currentMaxTokens = maxTokens;
-        String reserveResult = "";
-
-        for (int attempt = 0; attempt <= MAX_TRUNCATION_RETRIES; attempt++) {
-            try {
-                HttpRequest request = buildRequest(prompt, currentMaxTokens);
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
-                    throw new RuntimeException("API error: status=%d, body=%s".formatted(
-                            response.statusCode(), response.body()));
-                }
-
-                final String result = extractAnswer(response.body()).trim();
-                attempts = 0;
-                return result;
-            }
-            catch (TruncatedResponseException e) {
-                if (attempt == MAX_TRUNCATION_RETRIES) {
-                    throw new RuntimeException("Error sending request: " + e.getMessage()
-                            + " (gave up after %d retries, last max_tokens=%d)"
-                            .formatted(attempt, currentMaxTokens), e);
-                }
-                currentMaxTokens = Math.min(retryTokenCeiling(),
-                        (int) Math.ceil(currentMaxTokens * RETRY_TOKEN_MULTIPLIER));
-                System.out.println("Truncated response (finish_reason=length), retrying with max_tokens="
-                        + currentMaxTokens);
-
-            }
-            catch (RuntimeException e) {
-                if (attempts < 3 && e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute")) {
-                    final int startIndex = e.getMessage().indexOf("Please try again in ");
-                    if (startIndex == -1) {
-                        throw new RuntimeException("Error sending request: " + e.getMessage(), e);
-                    }
-                    final int endIndex = e.getMessage().lastIndexOf(". Need more tokens? ");
-                    String time = e.getMessage().substring(startIndex + 20, endIndex);
-                    final boolean ms = time.contains("ms");
-                    while(time.endsWith("s")) {
-                        time = time.replace("s", "");
-                    }
-                    while(time.endsWith("m")) {
-                        time = time.replace("m", "");
-                    }
-                    reserveResult = sendAgain(prompt, maxTokens, 1.0 + Double.parseDouble(time) * (ms ? 1 : 1000));
-                }
-                else throw new RuntimeException("Error sending request: " + e.getMessage(), e);
-            }
-            catch (Exception e) {
-                throw new RuntimeException("Error sending request: " + e.getMessage(), e);
-            }
-        }
-
-        attempts = 0;
-        return reserveResult;
-    }
-
-    private String sendAgain(String prompt, int maxTokens, double time) {
         try {
-            Thread.sleep(Math.min((long) Math.floor(time), 60_001L));
+            HttpRequest request = buildRequest(prompt, maxTokens);
+            HttpResponse<String> response = null;
+
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("API error: status=%d, body=%s".formatted(
+                        response.statusCode(), response.body()));
+            }
+
+            final String result;
+            result = extractAnswer(response.body()).trim();
+            return result;
         }
-        catch (InterruptedException ignore) {}
-        ++attempts;
-        return send(prompt, maxTokens);
+        catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected String getApiKey() {
@@ -125,6 +81,6 @@ public abstract class BaseLLMClient implements LLMClient {
         return apiKey;
     }
 
-    protected abstract HttpRequest buildRequest(String prompt, int maxTokens) throws Exception;
-    protected abstract String extractAnswer(String jsonResponse) throws Exception;
+    protected abstract HttpRequest buildRequest(String prompt, int maxTokens) throws JsonProcessingException;
+    protected abstract String extractAnswer(String jsonResponse) throws JsonProcessingException;
 }

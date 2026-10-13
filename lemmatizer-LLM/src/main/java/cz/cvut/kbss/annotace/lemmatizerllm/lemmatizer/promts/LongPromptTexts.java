@@ -22,25 +22,6 @@ Pravidla:
 - Nepiš nic navíc - žádné vysvětlení, žádné nadpisy, jen řádky.
 
 Příklad 1:
-Vstup: "Kvůli starým houslím se rodina dlouho hádala, ačkoli o ni už nikdo nestál."
-Výstup:
-Kvůli^kvůli
-starým^starý
-houslím^housle
-se^se
-rodina^rodina
-dlouho^dlouho
-hádala^hádat
-,^,
-ačkoli^ačkoli
-o^o
-ni^ona
-už^už
-nikdo^nikdo
-nestál^stát
-.^.
-
-Příklad 2:
 Vstup: "Nesnídal jsi nikdy dřív než v devět hodin, a tvoje sestry vstávaly ještě později."
 Výstup:
 Nesnídal^snídat
@@ -60,7 +41,7 @@ ještě^ještě
 později^pozdě
 .^.
 
-Příklad 3:
+Příklad 2:
 Vstup: "Cílem kapitoly je analyzovat „veřejný prostor“ vystavěného města. Dále se zjišťuje, jak byla zástavba v 19. století rozšířena (ii. fáze)."
 Výstup:
 Cílem^cíl

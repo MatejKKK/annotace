@@ -160,7 +160,18 @@ class MultiParamProviders {
                         
                         
                         CCC
-                        """, 3, 1, 50),
+                        """, 3, 2, 56),
+                arguments("""
+                        AAA
+                        
+                        
+                        
+                        BBB
+                        
+                        
+                        
+                        CCC
+                        """, 3, 1, 58),
                 arguments("""
                         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
                         

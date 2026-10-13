@@ -231,7 +231,7 @@ kulturní //// kulturního
 dědictví //// dědictví
 . //// .
 //// Věta 11
-druhá //// Druhá
+druhý //// Druhá
 obsahový //// obsahová
 kapitola //// kapitola
 3 //// 3
@@ -255,7 +255,7 @@ pomoc //// pomocí
 strukturálně //// strukturálně
 zaměřený //// zaměřeného
 přístup //// přístupu
- //// 
+, //// ,
 postavený //// postaveného
 na //// na
 převažující //// převažujícím
@@ -289,7 +289,7 @@ pomocí //// pomocí
 analýza //// analýzy
 veřejný //// veřejné
 přístupnost //// přístupnosti
- //// 
+, //// ,
 uliční //// uličních
 prostranství //// prostranství
 a //// a
@@ -311,14 +311,14 @@ podmínka //// podmínkami
 🡪 //// 🡪
 3.4 //// 3.4
 ) //// )
- //// 
+, //// ,
 který //// které
 se //// se
 zaobírat //// zaobírají
 téma //// tématy
 historický //// historických
 veduta //// vedut
- //// 
+, //// ,
 významný //// významných
 pohled //// pohledů
 na //// na
@@ -344,7 +344,7 @@ vzniknout //// vznikla
 nový //// nová
 podoba //// podoba
 aplikace //// aplikace
- //// 
+, //// ,
 kde //// kde
 být //// je
 možný //// možné
