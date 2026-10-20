@@ -14,14 +14,23 @@ public class StringParser {
     private String delimiter;
 
     public List<String> responseWordParser(String response) {
-        List<String> result = new ArrayList<>();
         final String[] lines = Arrays.stream(response.split("\n")).filter(
                 s -> s.contains(delimiter)
         ).toArray(String[]::new);
 
         boolean started = false;
+        //List<List<String>> results = new ArrayList<>();
+        List<String> result = new ArrayList<>();
 
         for (String line : lines) {
+//            if (line.contains(TextExtractor.PARAGRAPH_MERGE_MARK)) {
+//                if (!result.isEmpty()) {
+//                    results.add(result);
+//
+//                    result = new ArrayList<>();
+//                }
+//                continue;
+//            }
             if (line.isBlank() || line.length() < 3) {
                 if (!started) continue;
                 started = false;

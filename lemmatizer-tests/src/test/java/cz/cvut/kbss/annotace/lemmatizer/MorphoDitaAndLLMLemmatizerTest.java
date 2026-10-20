@@ -3,7 +3,7 @@ package cz.cvut.kbss.annotace.lemmatizer;
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
 import cz.cvut.kbss.annotace.configuration.MorphoditaConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConfSimpleFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,7 +35,7 @@ public class MorphoDitaAndLLMLemmatizerTest {
     private MorphoDitaServiceJNI morphoditaLemmatizer;
 
     private final LLMService LLMLemmatizer = new LLMService(
-            new LLMConf("CROQ","^", "750", "true")
+            LLMConfSimpleFactory.createLLMConf("CROQ","^", "750", "true")
     );
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();

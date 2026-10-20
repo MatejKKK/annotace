@@ -79,7 +79,7 @@ public class TextExtractor {
 
     /** Splits text into single paragraphs wherever {@value #PARAGRAPH_BREAK} occurs. */
     public static List<String> extractParagraphs(String text) {
-        return Arrays.asList(text.split(PARAGRAPH_BREAK));
+        return Arrays.stream(text.split(PARAGRAPH_BREAK)).map(it -> it + " " + PARAGRAPH_MERGE_MARK).toList();
     }
 
     /**
@@ -215,11 +215,11 @@ public class TextExtractor {
     private static String appendMarkBetweenMembers(List<Integer> groupOrders, Map<Integer, String> textByOrder) {
         final StringBuilder result = new StringBuilder();
 
-        for (int i = 0; i < groupOrders.size(); i++) {
+        for (int i = 0; i < groupOrders.size(); ++i) {
             result.append(textByOrder.get(groupOrders.get(i)));
-            if (i < groupOrders.size() - 1) {
-                result.append(PARAGRAPH_MERGE_MARK);
-            }
+//            if (i < groupOrders.size() - 1) {
+//                result.append(PARAGRAPH_MERGE_MARK);
+//            }
         }
         return result.toString();
     }

@@ -91,7 +91,7 @@ public class LLMService implements LemmatizerApi {
         switch (determineThreadMode(text)) {
             case SINGLE_THREAD -> results = processorProxy.process(text, lang);
             case FEW_THREADS -> {
-                List<Thread> proxies = launchProcessorProxies(text, lang).stream()
+                List<Thread> proxies = launchProcessorProxiesSingleKeyPerProxy(text, lang).stream()
                         .map(it -> {
                             Thread t = new Thread(it);
                             t.setPriority(it.getPriority());
@@ -176,8 +176,8 @@ public class LLMService implements LemmatizerApi {
         int countOfPar = text.split(PARAGRAPH_BREAK).length;
         return switch (conf.api()) {
             case GROQ -> {
-                boolean longText = countOfPar > 1 && text.length() > 2_000;
-                if (conf.apiKeys().length < 4 || !longText) {
+                boolean longText = countOfPar > 1 && text.length() > 1_000;
+                if (conf.apiKeys().length < 2 || !longText) {
                     yield ThreadMode.SINGLE_THREAD;
                 }
                 if (conf.apiKeys().length < 17) {
@@ -190,7 +190,61 @@ public class LLMService implements LemmatizerApi {
         };
     }
 
-    private List<ProcessorProxy> launchProcessorProxies(String text, String lang) {
+    private List<ProcessorProxy> launchProcessorProxiesSingleKeyPerProxy(String text, String lang) {
+        final String[] paragraphs = text.split(PARAGRAPH_BREAK);
+        final String[] keys = conf.apiKeys();
+        final int threadsCount = (int) Math.min(Math.min(paragraphs.length, (double) keys.length), 8.);
+
+        final int keysPerThread = 1;
+        int keyRemainder = 0;
+        int keyCurrIndex = keysPerThread;
+
+        final int paragraphsPerThread = (int) Math.ceil((double) paragraphs.length / threadsCount);
+        int paragraphRemainder = (paragraphs.length % threadsCount) - 1;
+        int paragraphCurrIndex = paragraphRemainder > -1 ? paragraphsPerThread : paragraphsPerThread + 1;
+
+        this.processorProxy.setIndex(0);
+        this.processorProxy.setPriority(paragraphCurrIndex == paragraphsPerThread ? 5 : 7);
+
+        List<ProcessorProxy> proxies = new  ArrayList<>(List.of(
+                this.processorProxy.setText(
+                        Arrays.stream(paragraphs)
+                                .limit(paragraphCurrIndex)
+                                .map(it -> it.concat(PARAGRAPH_BREAK))
+                                .collect(Collectors.joining()),
+                        lang,
+                        Arrays.stream(keys).limit(keyCurrIndex))
+        ));
+
+        for (int i = 1; i < threadsCount; ++i) {
+            final boolean keyRemainded = keyRemainder-- > 0;
+            final int keyDiff = keysPerThread + (keyRemainded ? 1 : 0);
+
+            final boolean paragraphRemainded = paragraphRemainder-- > 0;
+            final int paragraphDiff = paragraphsPerThread + (paragraphRemainded ? 1 : 0);
+
+            proxies.add(
+                    new GroqProcessorProxy(conf, language, paragraphRemainded, keyRemainded, i)
+                            .setText(
+                                    Arrays.stream(paragraphs)
+                                            .skip(paragraphCurrIndex)
+                                            .limit(paragraphDiff)
+                                            .map(it -> it.concat(PARAGRAPH_BREAK))
+                                            .collect(Collectors.joining()),
+                                    lang,
+                                    Arrays.stream(keys)
+                                            .skip(keyCurrIndex)
+                                            .limit(keyDiff)
+                            )
+            );
+
+            keyCurrIndex += keyDiff;
+            paragraphCurrIndex += paragraphDiff;
+        }
+        return proxies;
+    }
+
+    private List<ProcessorProxy> launchProcessorProxiesMultiKeysPerProxy(String text, String lang) {
         final String[] paragraphs = text.split(PARAGRAPH_BREAK);
         final String[] keys = conf.apiKeys();
         final int threadsCount = (int) Math.min(Math.min(paragraphs.length, Math.ceil(keys.length / 2.)), 8.);

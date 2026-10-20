@@ -1,6 +1,6 @@
 package cz.cvut.kbss.annotace.lemmatizerllm;
 
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConfSimpleFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
@@ -9,9 +9,9 @@ import java.util.List;
 
 public class Main {
 
-    private static final LLMService lemmatizer = new LLMService(
-            new LLMConf("CROQ", "^", "600", "true")
-    );
+    private static final LLMService lemmatizer = new LLMService(LLMConfSimpleFactory.createLLMConf(
+            "CROQ", "^", "600", "true"
+    ));
 
     public static void main(String[] args) {
         try {

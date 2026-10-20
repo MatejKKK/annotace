@@ -12,6 +12,7 @@ import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.croq.GroqClient;
 import cz.cvut.kbss.annotace.lemmatizerllm.model.Language;
 import cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
+import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
     private static final double GROWTH_EXPONENT = 1.12;
     private static final int MIN_TOKENS = 2048;
     private static final int MAX_TOKENS = 8192;
-    private static final int MAX_RETRIES = 5;
+    private static final int MAX_RETRIES = 7;
     private static final double RETRY_TOKEN_MULTIPLIER = 1.75;
 
     private final LLMConf conf;
@@ -83,7 +84,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
             List<List<SingleLemmaResult>> results = process();
             while (!ResultsStore.addResults(results, index)) {
                 try {
-                    Thread.sleep(1_024 + index);
+                    Thread.sleep(512 + index);
                 }
                 catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -99,7 +100,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
     public ProcessorProxy setText(String text, String lang, Stream<String> keys) {
         if (locked.get()) throw new RuntimeException("Cannot process text");
         locked.set(true);
-        setLanguage(Language.valueOf(lang));
+        setLanguage(Language.valueOf(lang.toUpperCase()));
         this.text = text;
         groqClient = new GroqClient(keys.map(System::getenv).toArray(String[]::new), "openai/gpt-oss-20b");
         return this;
@@ -107,10 +108,11 @@ public class GroqProcessorProxy implements ProcessorProxy {
 
     @Override
     public List<List<SingleLemmaResult>> process() {
-        final String[] paragraphs = mergeParagraphs(
+        System.out.println("Starting Groq process on thread " + index);
+        final String[] paragraphs = stream(mergeParagraphs(
                 extractParagraphs(removeBorderSpacesFromText(text)),
                 conf.maxParagraphLength()
-        );
+        )).map(it -> it + PARAGRAPH_MERGE_MARK).toArray(String[]::new);
         final List<List<SingleLemmaResult>> results = new ArrayList<>();
 
         for (final String paragraph : paragraphs) {
@@ -128,7 +130,14 @@ public class GroqProcessorProxy implements ProcessorProxy {
                     catch (InterruptedException ignored) {}
                 }
                 final String prompt = promptGenerator.prompt(sentences[i]);
-                final String response = send(prompt, getMaxTokens(sentences[i].length()));
+                String response = "";
+                try {
+                    response = send(prompt, getMaxTokens(sentences[i].length()), i);
+                }
+                catch (RuntimeException ignored) {
+
+                }
+                //stringParser.responseWordParser(response).forEach(paragraphResults::addAll);
                 paragraphResults.addAll(stringParser.responseWordParser(response));
             }
             results.addAll(processParagraph(paragraphResults, paragraph));
@@ -157,16 +166,18 @@ public class GroqProcessorProxy implements ProcessorProxy {
         this.lemmaResultFactory.setLanguage(language);
     }
 
-    private String send(String prompt, int maxTokens) {
+    @NonNull
+    private String send(String prompt, int maxTokens, int orderInTask) {
         if (prompt == null || prompt.isBlank()) {
             throw new IllegalArgumentException("Prompt cannot be null or empty");
         }
 
         int currentMaxTokens = maxTokens;
+        if (orderInTask % 3 == 0) groqClient.resetMemory();
 
-        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        for (int attempt = 0; attempt <= MAX_RETRIES; ++attempt) {
             try {
-                return this.groqClient.send(prompt, maxTokens);
+                return this.groqClient.sendWithMemory(prompt, maxTokens);
             }
             catch (TruncatedResponseException e) {
                 if (attempt >= MAX_RETRIES) {
@@ -189,33 +200,36 @@ public class GroqProcessorProxy implements ProcessorProxy {
                             + " (gave up after %d retries, last max_tokens=%d)"
                             .formatted(attempt, currentMaxTokens), e);
                 }
-                else if (e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute")) {
-                    final int startIndex = e.getMessage().indexOf("Please try again in ");
-                    if (startIndex == -1) {
-                        throw new RuntimeException("Error sending request: " + e.getMessage(), e);
-                    }
-                    final int endIndex = e.getMessage().lastIndexOf(". Need more tokens?");
-                    String time = e.getMessage().substring(startIndex + 20, endIndex);
+                if (!(e.getMessage() == null || e.getMessage().isEmpty())) {
+                    if (e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute")) {
+                        final int startIndex = e.getMessage().indexOf("Please try again in ");
+                        if (startIndex == -1) {
+                            throw new RuntimeException("Error sending request: " + e.getMessage(), e);
+                        }
+                        final int endIndex = e.getMessage().lastIndexOf(". Need more tokens?");
+                        String time = e.getMessage().substring(startIndex + 20, endIndex);
 
-                    System.out.println("It is necessary to wait for tokens per minute for " + time + ".");
+                        System.out.println("It is necessary to wait for tokens per minute for " + time + ".");
 
-                    final boolean ms = time.contains("ms");
-                    while (time.endsWith("s")) {
-                        time = time.replace("s", "");
-                    }
-                    while (time.endsWith("m")) {
-                        time = time.replace("m", "");
-                    }
+                        final boolean ms = time.contains("ms");
+                        while (time.endsWith("s")) {
+                            time = time.replace("s", "");
+                        }
+                        while (time.endsWith("m")) {
+                            time = time.replace("m", "");
+                        }
 
-                    try {
-                        Thread.sleep(Math.min((long) Math.floor(1.0 + Double.parseDouble(time) * (ms ? 1 : 1000)), 60_001L));
+                        try {
+                            Thread.sleep(Math.min((long) Math.floor(1.0 + Double.parseDouble(time) * (ms ? 1 : 1000)), 60_001L));
+                        } catch (InterruptedException ignore) {
+                        }
                     }
-                    catch (InterruptedException ignore) {}
+                    else if (e.getMessage().contains("Empty content in response (finish_reason=stop).")) {
+                        ++attempt;
+                    }
+                    else throw new RuntimeException("Error sending request: " + e.getMessage(), e);
                 }
-                else if (e.getMessage().contains("Empty content in response (finish_reason=stop).")) {
-                    ++attempt;
-                }
-                else throw new RuntimeException("Error sending request: " + e.getMessage(), e);
+                else ++attempt;
             }
             catch (Exception e) {
                 throw new RuntimeException("Error sending request: " + e.getMessage(), e);
@@ -226,30 +240,70 @@ public class GroqProcessorProxy implements ProcessorProxy {
 
     private List<List<SingleLemmaResult>> processParagraph(List<String> paragraphResults, String paragraph) {
         groqClient.setModel("openai/gpt-oss-120b");
-        final String prompt = promptGenerator.prompt(stringParser.wordResultObserver(paragraphResults), paragraph);
-        final String response = groqClient.send(prompt, getMaxTokens(paragraph.length()));
+        String response;
+        try {
+            final String prompt = promptGenerator.prompt(stringParser.wordResultObserver(paragraphResults), paragraph);
+            response = groqClient.send(prompt, getMaxTokens(paragraph.length()));
+        }
+        catch (RuntimeException e) {
+            response = paragraphResults.stream()
+                    .sorted()
+                    .map(it -> it.concat("\n"))
+                    .reduce("", (a, b) -> a.concat("\n").concat(b));
+        }
         return responseLemmaParser(response, paragraph);
     }
 
     private List<List<SingleLemmaResult>> responseLemmaParser(String response, String paragraph) {
         List<List<SingleLemmaResult>> results = new ArrayList<>();
-        final String[] paragraphs = response.split(PARAGRAPH_MERGE_MARK_LINE);
+        List<SingleLemmaResult> result = new ArrayList<>();
+        final String[] lines = response.split("\n");
 
-        for (final String paragraphResponse : paragraphs) {
-            final String[] lines = stream(paragraphResponse.split("\n"))
-                    .filter(s -> s.contains(conf.delimiter()))
-                    .toArray(String[]::new);
-
-            List<SingleLemmaResult> result = new ArrayList<>();
-            for (final String line : lines) {
-                if (line.isBlank()) continue;
-                result.addAll(addSpacesToLemmas(lemmaResultFactory.createSingleLemmaResult(line), paragraph));
+        for (final String  line : lines) {
+            if (line.contains(PARAGRAPH_MERGE_MARK)) {
+                if (!result.isEmpty()) {
+                    results.add(result);
+                    result = new ArrayList<>();
+                }
+                continue;
             }
-            results.add(result);
+            if (line.isBlank() || line.length() < 3 || !line.contains(conf.delimiter())) {
+                continue;
+            }
+            result.addAll(addSpacesToLemmas(lemmaResultFactory.createSingleLemmaResult(line), paragraph));
+        }
+        if (!result.isEmpty()) {
+            if (result.stream().map(it -> it.getLemma().length()).reduce(0, Integer::sum) > 2) {
+                results.add(result);
+            }
+            else {
+                result.addAll(0, results.removeLast());
+                results.add(result);
+            }
         }
 
         return results;
     }
+
+//    private List<List<SingleLemmaResult>> responseLemmaParser(String response, String paragraph) {
+//        List<List<SingleLemmaResult>> results = new ArrayList<>();
+//        final String[] paragraphs = response.split(PARAGRAPH_MERGE_MARK_LINE);
+//
+//        for (final String paragraphResponse : paragraphs) {
+//            final String[] lines = stream(paragraphResponse.split("\n"))
+//                    .filter(s -> s.contains(conf.delimiter()))
+//                    .toArray(String[]::new);
+//
+//            List<SingleLemmaResult> result = new ArrayList<>();
+//            for (final String line : lines) {
+//                if (line.isBlank()) continue;
+//                result.addAll(addSpacesToLemmas(lemmaResultFactory.createSingleLemmaResult(line), paragraph));
+//            }
+//            results.add(result);
+//        }
+//
+//        return results;
+//    }
 
     private int getMaxTokens(int paragraphLength) {
         final double estimated = BASE_TOKENS + TOKENS_PER_WORD * Math.pow(paragraphLength / 5., GROWTH_EXPONENT);

@@ -14,7 +14,7 @@ import java.time.Duration;
 
 public abstract class BaseLLMClient implements LLMClient {
     protected final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(30))
+            .connectTimeout(Duration.ofSeconds(60))
             .build();
 
     protected final ObjectMapper objectMapper = new ObjectMapper()

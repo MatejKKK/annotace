@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group = 'cz.cvut.kbss'
+version = ''
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":api")
+    implementation project(":lemmatizer-LLM")
+
+    implementation(libs.spring.boot.web)
+    implementation("org.jsoup:jsoup:1.23.2")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+test {
+    useJUnitPlatform()
+}

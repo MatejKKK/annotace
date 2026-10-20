@@ -16,6 +16,7 @@ dependencies {
     implementation project(":keywordextractor-ker")
     implementation project(":lemmatizer-spark")
     implementation project(":lemmatizer-morphodita")
+    implementation project(":lemmatizer-LLM")
 
     implementation(libs.spring.boot.web)
     implementation("org.jsoup:jsoup:1.18.1")
