@@ -7,6 +7,8 @@ dependencies {
     implementation project(":api")
     testImplementation project(":testservice")
 
+    implementation(libs.spring.boot.web)
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.junit.jupiter:junit-jupiter'
 

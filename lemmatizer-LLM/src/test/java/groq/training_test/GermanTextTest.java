@@ -1,4 +1,4 @@
-package training_test;
+package groq.training_test;
 
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -6,29 +6,28 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
-import static cz.cvut.kbss.annotace.Tests.*;
+import static cz.cvut.kbss.annotace.Tests.simpleRateTest;
 import static cz.cvut.kbss.annotace.TxtReader.getExpectedList;
 import static cz.cvut.kbss.annotace.TxtReader.getInputText;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CzechTextTest extends AbstractTextTest {
+public class GermanTextTest  extends AbstractTextTest {
 
     @ParameterizedTest
     @CsvSource({
-            //"src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,1",
-            "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,1",
-            //"src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,9",
-            //"src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,8"
+            "src/test/resources/de/inputs/1.txt,src/test/resources/de/expected/1.txt,1",
+            "src/test/resources/de/inputs/2.txt,src/test/resources/de/expected/2.txt,1",
+            "src/test/resources/de/inputs/3.txt,src/test/resources/de/expected/3.txt,5",
     })
     @Override
     protected void testText(String input, String expected, String expectedParagraphsCountParam) {
         int expectedParagraphsCount = Integer.parseInt(expectedParagraphsCountParam);
         String text = getInputText(input);
         List<String> lemmas = getExpectedList(expected);
-        LemmatizerResult result = lemmatizer.process(text, "cs");
+        LemmatizerResult result = lemmatizer.process(text, "de");
 
-        assertTrue(completeRateTest(lemmas, text, result, 90, 10));
+        assertTrue(simpleRateTest(lemmas, result, 90));
         assertEquals(expectedParagraphsCount, result.getResult().size(), "Paragraphs count mismatch");
     }
 }

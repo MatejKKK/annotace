@@ -26,7 +26,7 @@ public class TextPreprocessor {
             else line.append(c);
         }
 
-        if (lines[lines.length - 1] != '\n') result.append(removeBorderSpaces(line.toString().concat("\n")));
+        if (line.isEmpty() || lines[lines.length - 1] != '\n') result.append(removeBorderSpaces(line.toString().concat("\n")));
         return result.toString();
     }
 }

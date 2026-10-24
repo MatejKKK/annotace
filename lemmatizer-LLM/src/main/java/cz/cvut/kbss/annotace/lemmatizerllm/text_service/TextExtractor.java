@@ -31,7 +31,7 @@ public class TextExtractor {
      * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source text, only
      * where {@link #mergeParagraphs} glued two originally separate paragraphs together.
      */
-    public static final String PARAGRAPH_MERGE_MARK_LINE = PARAGRAPH_MERGE_MARK + "^" + PARAGRAPH_MERGE_MARK;
+    public static final String PARAGRAPH_MERGE_MARK_LINE = "9348435854367645^9348435854367645";
 
     /**
      * Shrink factor applied, per extra paragraph, to the length cap when whole paragraphs are merged
@@ -79,7 +79,7 @@ public class TextExtractor {
 
     /** Splits text into single paragraphs wherever {@value #PARAGRAPH_BREAK} occurs. */
     public static List<String> extractParagraphs(String text) {
-        return Arrays.stream(text.split(PARAGRAPH_BREAK)).map(it -> it + " " + PARAGRAPH_MERGE_MARK).toList();
+        return Arrays.stream(text.split(PARAGRAPH_BREAK)).map(it -> it + " " + PARAGRAPH_MERGE_MARK + " ").toList();
     }
 
     /**

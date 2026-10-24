@@ -2,7 +2,7 @@ application:
   version: ${version}
 
 annotace:
-  lemmatizer: spark
+  lemmatizer: llm
   ker:
     service: http://lindat.mff.cuni.cz/services/ker?language=cs&threshold=0.04&maximum-words=30
   spark:

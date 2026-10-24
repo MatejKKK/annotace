@@ -14,11 +14,11 @@ public class ResultsStore {
 
     private static final AtomicBoolean lastSuccess = new AtomicBoolean(false);
 
-    public static boolean addResults(List<List<SingleLemmaResult>> threadResults, int index) {
+    public static int addResults(List<List<SingleLemmaResult>> threadResults, int index) {
         synchronized (currentIndex) {
             if (index > currentIndex.get()) {
                 lastSuccess.set(false);
-                return false;
+                return index - currentIndex.get();
             }
             currentIndex.set(index + 1);
         }
@@ -26,10 +26,10 @@ public class ResultsStore {
         synchronized (results) {
             results.addAll(threadResults);
         }
-        return true;
+        return 0;
     }
 
-    public static List<List<SingleLemmaResult>> getResults() {
+    static List<List<SingleLemmaResult>> getResults() {
         System.out.println("STORE: " + lastSuccess.get());
         synchronized (results) {
             return results;

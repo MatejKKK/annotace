@@ -39,4 +39,11 @@ public class SingleLemmaResult {
         this.lemma = lemma;
         this.negated = negated;
     }
+
+    public SingleLemmaResult(String token, String lemma, String trailingSpaces, boolean negated) {
+        this.token = token;
+        this.lemma = lemma;
+        this.trailingSpaces = trailingSpaces;
+        this.negated = negated;
+    }
 }

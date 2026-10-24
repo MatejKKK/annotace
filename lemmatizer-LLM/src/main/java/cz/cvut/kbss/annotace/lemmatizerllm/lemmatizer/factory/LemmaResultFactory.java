@@ -10,14 +10,15 @@ import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser.remo
 public abstract class LemmaResultFactory {
 
     protected String delimiter;
+    protected final static List<String> SYMBOLS = List.of(",", ".", "\"", "-", "–", ":", "'", "“", ";");
 
     protected LemmaResultFactory(String delimiter) {
         this.delimiter = "\\".concat(delimiter);
     }
 
     public abstract List<SingleLemmaResult> createSingleLemmaResult(String line);
-
     public abstract void setLanguage(Language language);
+    public abstract void setParagraph(String paragraph);
 
     protected final SingleLemmaResult parseSingleLemmaResult(String line) {
         while (line.endsWith(" ")) {
@@ -93,13 +94,28 @@ public abstract class LemmaResultFactory {
             }
 
             if (currentIndex > -1) {
-                lemma.setLeadingSpaces(getLeadingSpaces(currentIndex, originalParagraph));
+                //lemma.setLeadingSpaces(getLeadingSpaces(currentIndex, originalParagraph));
                 lemma.setTrailingSpaces(getTrailingSpaces(currentIndex + token.length(), originalParagraph));
 
                 if (lastIndex < currentIndex && lastIndex + lemma.getToken().length() + 1 > currentIndex) {
                     lastIndex = Math.min(currentIndex + lemma.getToken().length() - 1, originalParagraph.length() - 1);
                 }
             }
+            else System.out.println("Token " + token + " not found. Lemma is " + lemma.getLemma());
+        }
+
+        return paragraph;
+    }
+
+    public List<SingleLemmaResult> addSpacesToLemmas(List<SingleLemmaResult> paragraph) {
+        for (int i = 0; i < paragraph.size() - 1; ++i) {
+            if (!paragraph.get(i).getTrailingSpaces().isEmpty()) continue;
+
+            final String nextToken = paragraph.get(i + 1).getToken();
+            if (SYMBOLS.stream().anyMatch(it -> it.equals(nextToken))) continue;
+
+            final SingleLemmaResult lemmaResult = paragraph.get(i);
+            paragraph.set(i, lemmaResult);
         }
 
         return paragraph;

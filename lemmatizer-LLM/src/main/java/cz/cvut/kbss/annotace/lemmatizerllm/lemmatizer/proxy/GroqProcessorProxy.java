@@ -2,56 +2,26 @@ package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.proxy;
 
 import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.exception.TruncatedResponseException;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.ResultsStore;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.PostprocessedLemmaResultFactory;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleLemmaResultFactory;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.LemmaResultFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.LongPromptTexts;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.PromptGenerator;
 import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.croq.GroqClient;
 import cz.cvut.kbss.annotace.lemmatizerllm.model.Language;
-import cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.LemmaResultFactory.addSpacesToLemmas;
 import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextExtractor.*;
 import static cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextPreprocessor.removeBorderSpacesFromText;
 import static java.util.Arrays.stream;
 
-public class GroqProcessorProxy implements ProcessorProxy {
+public class GroqProcessorProxy extends ProcessorProxy {
 
-    private static final int BASE_TOKENS = 2048;
-    private static final double TOKENS_PER_WORD = 5.5;
-    private static final double GROWTH_EXPONENT = 1.12;
-    private static final int MIN_TOKENS = 2048;
-    private static final int MAX_TOKENS = 8192;
-    private static final int MAX_RETRIES = 7;
-    private static final double RETRY_TOKEN_MULTIPLIER = 1.75;
-
-    private final LLMConf conf;
-    private final StringParser stringParser;
-    private final PromptGenerator promptGenerator = new PromptGenerator(new LongPromptTexts());
-    private final LemmaResultFactory lemmaResultFactory;
     private GroqClient groqClient;
-    private int priority = 5;
-    private int index;
-    private String text;
-    private final AtomicBoolean locked = new AtomicBoolean(false);
 
     public GroqProcessorProxy(LLMConf conf, Language language) {
-        this.conf = conf;
-        this.stringParser = new StringParser(conf.delimiter());
-
-        this.lemmaResultFactory = conf.usePostProcessing() ?
-                new PostprocessedLemmaResultFactory(conf.delimiter(), language) :
-                new SimpleLemmaResultFactory(conf.delimiter());
-
+        super(conf, language);
         final String[] keys = stream(conf.apiKeys()).map(System::getenv).toArray(String[]::new);
         groqClient = new GroqClient(keys, "openai/gpt-oss-20b");
     }
@@ -64,40 +34,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
     }
 
     @Override
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-
-    @Override
-    public int getPriority() {
-        return priority;
-    }
-
-    @Override
-    public void setIndex(int index) {
-        this.index = index;
-    }
-
-    @Override
-    public void run() {
-        try {
-            List<List<SingleLemmaResult>> results = process();
-            while (!ResultsStore.addResults(results, index)) {
-                try {
-                    Thread.sleep(512 + index);
-                }
-                catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        finally {
-            locked.set(false);
-        }
-    }
-
-    @Override
-    public ProcessorProxy setText(String text, String lang, Stream<String> keys) {
+    public ProcessorProxy setTextAndGet(String text, String lang, Stream<String> keys) {
         if (locked.get()) throw new RuntimeException("Cannot process text");
         locked.set(true);
         setLanguage(Language.valueOf(lang.toUpperCase()));
@@ -107,7 +44,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
     }
 
     @Override
-    public List<List<SingleLemmaResult>> process() {
+    List<List<SingleLemmaResult>> process() {
         System.out.println("Starting Groq process on thread " + index);
         final String[] paragraphs = stream(mergeParagraphs(
                 extractParagraphs(removeBorderSpacesFromText(text)),
@@ -118,6 +55,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
         for (final String paragraph : paragraphs) {
             promptGenerator.setPromptTexts(new LongPromptTexts());
             groqClient.setModel("openai/gpt-oss-20b");
+            lemmaResultFactory.setParagraph(paragraph);
             final List<String> paragraphResults = new ArrayList<>();
 
             final String[] sentences = mergeSentences(extractSentences(paragraph), conf.maxSentenceLength());
@@ -137,33 +75,12 @@ public class GroqProcessorProxy implements ProcessorProxy {
                 catch (RuntimeException ignored) {
 
                 }
-                //stringParser.responseWordParser(response).forEach(paragraphResults::addAll);
                 paragraphResults.addAll(stringParser.responseWordParser(response));
             }
             results.addAll(processParagraph(paragraphResults, paragraph));
         }
 
         return results;
-    }
-
-    @Override
-    public List<List<SingleLemmaResult>> process(String text, String lang) {
-        if (locked.get()) throw new RuntimeException("Cannot process text");
-        locked.set(true);
-        setLanguage(Language.valueOf(lang.toUpperCase()));
-        this.text = text;
-        try {
-            return process();
-        }
-        finally {
-            locked.set(false);
-        }
-    }
-
-    @Override
-    public void setLanguage(Language language) {
-        this.promptGenerator.setLanguage(language);
-        this.lemmaResultFactory.setLanguage(language);
     }
 
     @NonNull
@@ -243,7 +160,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
         String response;
         try {
             final String prompt = promptGenerator.prompt(stringParser.wordResultObserver(paragraphResults), paragraph);
-            response = groqClient.send(prompt, getMaxTokens(paragraph.length()));
+            response = send(prompt, getMaxTokens(paragraph.length()), 0);
         }
         catch (RuntimeException e) {
             response = paragraphResults.stream()
@@ -251,38 +168,7 @@ public class GroqProcessorProxy implements ProcessorProxy {
                     .map(it -> it.concat("\n"))
                     .reduce("", (a, b) -> a.concat("\n").concat(b));
         }
-        return responseLemmaParser(response, paragraph);
-    }
-
-    private List<List<SingleLemmaResult>> responseLemmaParser(String response, String paragraph) {
-        List<List<SingleLemmaResult>> results = new ArrayList<>();
-        List<SingleLemmaResult> result = new ArrayList<>();
-        final String[] lines = response.split("\n");
-
-        for (final String  line : lines) {
-            if (line.contains(PARAGRAPH_MERGE_MARK)) {
-                if (!result.isEmpty()) {
-                    results.add(result);
-                    result = new ArrayList<>();
-                }
-                continue;
-            }
-            if (line.isBlank() || line.length() < 3 || !line.contains(conf.delimiter())) {
-                continue;
-            }
-            result.addAll(addSpacesToLemmas(lemmaResultFactory.createSingleLemmaResult(line), paragraph));
-        }
-        if (!result.isEmpty()) {
-            if (result.stream().map(it -> it.getLemma().length()).reduce(0, Integer::sum) > 2) {
-                results.add(result);
-            }
-            else {
-                result.addAll(0, results.removeLast());
-                results.add(result);
-            }
-        }
-
-        return results;
+        return responseLemmaParser(response);
     }
 
 //    private List<List<SingleLemmaResult>> responseLemmaParser(String response, String paragraph) {

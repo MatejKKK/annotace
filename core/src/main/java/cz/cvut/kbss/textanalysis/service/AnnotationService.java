@@ -28,6 +28,7 @@ import cz.cvut.kbss.textanalysis.model.Word;
 import org.apache.jena.base.Sys;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +60,7 @@ public class AnnotationService {
                                        final List<QueryResult> queryResultList,
                                        final KeywordExtractorResult result, String lang) {
         final LemmatizerResult lemmatizerResult = lemmatizer.process(textChunk, lang);
+
         return annotateOntologyLabels(lemmatizerResult, queryResultList, result, lang);
     }
 

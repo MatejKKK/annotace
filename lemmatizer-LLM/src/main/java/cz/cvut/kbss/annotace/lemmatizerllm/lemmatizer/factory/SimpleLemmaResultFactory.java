@@ -20,4 +20,7 @@ public class SimpleLemmaResultFactory extends LemmaResultFactory {
 
     @Override
     public void setLanguage(Language language) {}
+
+    @Override
+    public void setParagraph(String paragraph) {}
 }

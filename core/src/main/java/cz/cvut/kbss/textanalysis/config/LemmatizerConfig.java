@@ -22,6 +22,8 @@ import cz.cvut.kbss.annotace.configuration.SparkConf;
 import cz.cvut.kbss.annotace.lemmatizer.MorphoDitaServiceJNI;
 import cz.cvut.kbss.annotace.lemmatizer.MorphoDitaServiceOnline;
 import cz.cvut.kbss.annotace.lemmatizer.SparkLemmatizer;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,10 @@ public class LemmatizerConfig {
                 log.info("Instantiating MorhoDiTa online lemmatizer.");
                 yield new MorphoDitaServiceOnline(RestClient.builder(), context.getBean(
                         MorphoditaConf.class));
+            }
+            case "llm" -> {
+                log.info("Instantiating LLM lemmatizer.");
+                yield new LLMService(context.getBean(LLMConf.class));
             }
             default -> {
                 log.info("Instantiating Apache Spark lemmatizer.");

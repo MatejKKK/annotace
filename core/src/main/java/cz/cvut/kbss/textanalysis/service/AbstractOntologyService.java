@@ -19,6 +19,7 @@ package cz.cvut.kbss.textanalysis.service;
 
 import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
+import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.query.QueryExecution;
@@ -111,14 +112,61 @@ public abstract class AbstractOntologyService implements OntologyService {
         LemmatizerResult lemmatizerResult =
             lemmatizerServiceApi.process(ontologieLabels, lang);
 
-        int i = 0;
-        for (QueryResult queryResult : queryResultList) {
-            queryResult.setSingleLemmaResults(lemmatizerResult.getResult().get(i));
-            i++;
+        if (lemmatizerResult.getResult().size() == queryResultList.size()) {
+            int i = 0;
+            for (QueryResult queryResult : queryResultList) {
+                queryResult.setSingleLemmaResults(lemmatizerResult.getResult().get(i));
+                i++;
+            }
         }
-
+        else {
+            log.warn("Query result list has different size in compare to lemmatized query result list");
+            for (List<SingleLemmaResult> singleLemmaResults : lemmatizerResult.getResult()) {
+                String fullToken = paragraphObserver(singleLemmaResults);
+                int count = 0;
+                for (QueryResult queryResult : queryResultList) {
+                    if (queryResult.getSingleLemmaResults() != null) {
+                        continue;
+                    }
+                    if (fullToken.contains(queryResult.getLabel().trim())) {
+                        ++count;
+                    }
+                }
+                if (count == 0) {
+                    continue;
+                }
+                if (count == 1) {
+                    for (QueryResult queryResult : queryResultList) {
+                        if (fullToken.contains(queryResult.getLabel().trim())) {
+                            queryResult.setSingleLemmaResults(singleLemmaResults);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    //TODO add when having multiple matches
+                    for (QueryResult queryResult : queryResultList) {
+                        if (fullToken.contains(queryResult.getLabel().trim())) {
+                            queryResult.setSingleLemmaResults(singleLemmaResults);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         log.debug("Morphological analysis for ontology labels has finished");
         return queryResultList;
+    }
 
+    private static String paragraphObserver(List<SingleLemmaResult> results) {
+        if (results.isEmpty()) {
+            return "";
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < results.size() - 1; ++i) {
+            sb.append(results.get(i).getToken().concat(results.get(i).getTrailingSpaces()));
+        }
+        sb.append(results.getLast().getToken());
+        return sb.toString();
     }
 }
