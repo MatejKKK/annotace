@@ -1,6 +1,7 @@
 package cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer;
 
 import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.PostprocessedLemmaResultFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleLemmaResultFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.LemmaResultFactory;
@@ -38,7 +39,6 @@ public class LLMService implements LemmatizerApi {
     @Deprecated private static final int MAX_TOKENS = 8192;
 
     private LLMConf conf;
-    @Deprecated
     private final StringParser stringParser;
     private final PromptGenerator promptGenerator = new PromptGenerator(new LongPromptTexts());
     private LemmaResultFactory lemmaResultFactory;
@@ -50,17 +50,17 @@ public class LLMService implements LemmatizerApi {
             new String[]{System.getenv("GROQ_API_KEY"), System.getenv("GROQ_API_KEY_2")}, "openai/gpt-oss-20b"
     );
 
-    public LLMService(LLMConf conf) {
-        this.conf = conf;
-        this.stringParser = new StringParser(conf.delimiter());
+    public LLMService(LLMTextConf conf) {
+        this.conf = conf.toLLMConf();
+        this.stringParser = new StringParser(this.conf.delimiter());
 
-        this.lemmaResultFactory = conf.usePostProcessing() ?
-                new PostprocessedLemmaResultFactory(conf.delimiter(), conf.selectOneCharWords(), language) :
-                new SimpleLemmaResultFactory(conf.delimiter());
+        this.lemmaResultFactory = this.conf.usePostProcessing() ?
+                new PostprocessedLemmaResultFactory(this.conf.delimiter(), this.conf.selectOneCharWords(), language) :
+                new SimpleLemmaResultFactory(this.conf.delimiter());
 
-        this.processorProxy = switch (conf.api()) {
-            case GROQ -> new GroqProcessorProxy(conf, language);
-            case EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM -> new EInfraProccesorProxy(conf, language);
+        this.processorProxy = switch (this.conf.api()) {
+            case GROQ -> new GroqProcessorProxy(this.conf, language);
+            case EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM -> new EInfraProccesorProxy(this.conf, language);
             default -> throw new RuntimeException("Unknown api type");
         };
     }

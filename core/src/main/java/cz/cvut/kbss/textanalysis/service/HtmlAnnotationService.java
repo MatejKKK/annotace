@@ -17,15 +17,19 @@
  */
 package cz.cvut.kbss.textanalysis.service;
 
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.Constants;
 import cz.cvut.kbss.textanalysis.dto.TextAnalysisInput;
 import cz.cvut.kbss.textanalysis.keywordextractor.KeywordExtractorAPI;
 import cz.cvut.kbss.textanalysis.keywordextractor.model.KeywordExtractorResult;
+import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
+import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
+import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
 import cz.cvut.kbss.textanalysis.service.html2rdfa.Annotator;
+import cz.cvut.kbss.textanalysis.service.lemma_aligner.Chunk;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.jena.base.Sys;
 import org.apache.jena.vocabulary.SKOS;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -50,6 +54,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static cz.cvut.kbss.textanalysis.service.lemma_aligner.LemmaAligner.*;
+
 @Service
 @Slf4j
 public class HtmlAnnotationService {
@@ -60,13 +66,19 @@ public class HtmlAnnotationService {
 
     private final KeywordExtractorAPI keywordExtractionService;
 
+    private final LemmatizerApi lemmatizerApi;
+
+    private static final double MIN_LEMMA_COVERAGE = 0.8;
+
     @Autowired
     public HtmlAnnotationService(AnnotationService annotationService,
                                  OntologyService ontologyService,
-                                 KeywordExtractorAPI kerService) {
+                                 KeywordExtractorAPI kerService,
+                                 LemmatizerApi lemmatizerApi) {
         this.annotationService = annotationService;
         this.ontologyService = ontologyService;
         this.keywordExtractionService = kerService;
+        this.lemmatizerApi = lemmatizerApi;
     }
 
 
@@ -115,6 +127,67 @@ public class HtmlAnnotationService {
             kerResult = keywordExtractionService.process(documentChunksString);
         } else {
             kerResult = KeywordExtractorResult.createEmpty();
+        }
+
+        if (lemmatizerApi instanceof LLMService) {
+            final String fullText = String.join("\n\n\n\n", chunks);
+            final LemmatizerResult llmResult = lemmatizerApi.process(fullText, lang);
+
+            final List<List<SingleLemmaResult>> perChunk;
+            if (llmResult != null && llmResult.getResult() != null
+                    && llmResult.getResult().size() == chunks.size()) {
+                // The LLM returned exactly one lemmatized paragraph per chunk -> rely on the order.
+                perChunk = llmResult.getResult();
+            }
+            else {
+                // Paragraph count differs -> align lemmas to the original texts.
+                log.debug("LLM returned {} paragraphs for {} chunks, aligning lemmas.",
+                        llmResult != null && llmResult.getResult() != null ? llmResult.getResult().size() : 0,
+                        chunks.size());
+                final List<Chunk> aligned = new ArrayList<>(align(chunks, llmResult));
+                for (int i = 0; i < chunks.size() && i < aligned.size(); ++i) {
+                    if (aligned.get(i).coverage() < MIN_LEMMA_COVERAGE) {
+                        // The LLM dropped or garbled this chunk -> lemmatize it separately.
+                        try {
+                            final LemmatizerResult retry = lemmatizerApi.process(chunks.get(i), lang);
+                            aligned.set(i, align(List.of(chunks.get(i)), retry).getFirst());
+                        }
+                        catch (Exception ex) {
+                            log.warn("Re-lemmatization of chunk {} failed.", i, ex);
+                        }
+                    }
+                }
+                perChunk = aligned.stream().map(Chunk::tokens).collect(Collectors.toList());
+            }
+
+            // Keyword extraction result + ontology are evaluated once over the whole text,
+            // then the words are split back into the text nodes.
+            final LemmatizerResult allResult = new LemmatizerResult();
+            allResult.setLemmatizer(llmResult != null ? llmResult.getLemmatizer() : null);
+            allResult.setResult(perChunk);
+
+            final Map<String, List<Word[]>> wordsByChunk = new HashMap<>();
+            try {
+                final List<Word> allWords = annotationService
+                        .getAnnotationsWithoutLemmatization(allResult, queryResultList, kerResult, lang);
+                int offset = 0; // one Word per token, in the same order
+                for (int i = 0; i < chunks.size(); ++i) {
+                    final int size = perChunk.get(i).size();
+                    wordsByChunk.computeIfAbsent(chunks.get(i), k -> new ArrayList<>())
+                            .add(allWords.subList(offset, offset + size).toArray(new Word[]{}));
+                    offset += size;
+                }
+            } catch (Exception ex) {
+                log.error("Document annotation failed.", ex);
+            }
+
+            return this.annotate(textChunk -> {
+                final List<Word[]> queue = wordsByChunk.get(textChunk);
+                if (queue != null && !queue.isEmpty()) {
+                    return queue.removeFirst();
+                }
+                return new Word[]{new Word("", "", textChunk, "")}; // text stays unchanged
+            }, doc, lang).toString();
         }
 
         //lemmatizer:

@@ -1,4 +1,11 @@
 annotace:
+  llm:
+    api: GROQ
+    api-keys: GROQ_API_KEY,GROQ_API_KEY_2
+    delimiter: ^
+    max-sentence-length: 400
+    use-post-processing: true
+    select-one-char-words: false
   morphodita:
     taggers:
       cs: czech-morfflex-pdt-161115.tagger

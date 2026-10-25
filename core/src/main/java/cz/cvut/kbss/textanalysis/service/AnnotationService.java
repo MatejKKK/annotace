@@ -25,7 +25,6 @@ import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import cz.cvut.kbss.textanalysis.model.Phrase;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
-import org.apache.jena.base.Sys;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -51,6 +50,17 @@ public class AnnotationService {
             throws AnnotationException {
         try {
             return this._getAnnotations(textChunk, queryResultList, result, lang);
+        } catch (Exception e) {
+            throw new AnnotationException("Annotation failed.", e);
+        }
+    }
+
+    public List<Word> getAnnotationsWithoutLemmatization(final LemmatizerResult textChunk,
+                                     final List<QueryResult> queryResultList,
+                                     final KeywordExtractorResult result, String lang)
+            throws AnnotationException {
+        try {
+            return annotateOntologyLabels(textChunk, queryResultList, result, lang);
         } catch (Exception e) {
             throw new AnnotationException("Annotation failed.", e);
         }

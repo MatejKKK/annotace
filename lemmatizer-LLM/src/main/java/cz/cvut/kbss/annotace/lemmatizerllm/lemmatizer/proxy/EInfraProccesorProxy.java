@@ -98,6 +98,7 @@ public class EInfraProccesorProxy extends ProcessorProxy {
             results.addAll(processParagraph(paragraphResults, paragraph));
         }
 
+        locked.set(false);
         return results;
     }
 

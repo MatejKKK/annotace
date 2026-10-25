@@ -1,14 +1,13 @@
 package einfra.training_test;
 
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConfSimpleFactory;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 
-@SuppressWarnings("unused")
 abstract class AbstractTextTest {
 
     protected AbstractTextTest() {
-        lemmatizer = new LLMService(LLMConfSimpleFactory.createLLMConf(
-                "EINFRA_GLM", "^", "200", "true", "INFRA_1"
+        lemmatizer = new LLMService(new LLMTextConf(
+                "EINFRA_GLM", "INFRA_1", "^", "400", "true", "false"
         ));
     }
 

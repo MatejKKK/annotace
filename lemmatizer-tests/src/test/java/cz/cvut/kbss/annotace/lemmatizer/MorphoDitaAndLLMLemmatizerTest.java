@@ -3,7 +3,7 @@ package cz.cvut.kbss.annotace.lemmatizer;
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
 import cz.cvut.kbss.annotace.configuration.MorphoditaConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConfSimpleFactory;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.api.MethodOrderer;
@@ -28,15 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
-        classes = {MorphoditaConf.class, MorphoDitaServiceJNI.class})
+        classes = {MorphoditaConf.class, MorphoDitaServiceJNI.class, LLMTextConf.class, LLMService.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MorphoDitaAndLLMLemmatizerTest {
     @Autowired
     private MorphoDitaServiceJNI morphoditaLemmatizer;
 
-    private final LLMService LLMLemmatizer = new LLMService(
-            LLMConfSimpleFactory.createLLMConf("CROQ","^", "750", "true")
-    );
+    @Autowired
+    private LLMService LLMLemmatizer;
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();
     private final static List<CorrectAndTotal> LLMResults = new ArrayList<>();
@@ -44,14 +43,14 @@ public class MorphoDitaAndLLMLemmatizerTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/cz/inputs/1.txt,src/test/resources/cz/expected/1.txt,cs",
-            "src/test/resources/cz/inputs/2.txt,src/test/resources/cz/expected/2.txt,cs",
+            "src/test/resources/en/inputs/1.txt,src/test/resources/en/expected/1.txt,en",
+            "src/test/resources/en/inputs/2.txt,src/test/resources/en/expected/2.txt,en",
             "src/test/resources/cz/inputs/3.txt,src/test/resources/cz/expected/3.txt,cs",
             "src/test/resources/cz/inputs/4.txt,src/test/resources/cz/expected/4.txt,cs"
     })
     @Order(1)
     void verifyThatLLMLemmatizerIsBetterThatSpark(String input, String expected, String lang) {
-        final double APLHA = 1.;
+        final double ALPHA = 1.;
 
         String text = getInputText(input);
         List<String> lemmas = getExpectedList(expected);
@@ -69,9 +68,9 @@ public class MorphoDitaAndLLMLemmatizerTest {
                 " and and actual rate is: " + LLMResult.rate());
 
         assertTrue(
-                Tests.statisticsOneDirectTest(sparkResult, LLMResult, APLHA),
+                Tests.statisticsOneDirectTest(sparkResult, LLMResult, ALPHA),
                 "Zero hypothesis (that LLM lemmatizer is better or same than Spark lemmatizer) is rejected in favor of an alternative hypothesis (that LLM lemmatizer is worse than Spark lemmatizer) " +
-                        "on level " + APLHA + "%."
+                        "on level " + ALPHA + "%."
         );
     }
 

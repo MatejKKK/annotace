@@ -3,7 +3,7 @@ package cz.cvut.kbss.annotace.lemmatizer;
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
 import cz.cvut.kbss.annotace.configuration.SparkConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConfSimpleFactory;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.api.MethodOrderer;
@@ -28,15 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
-        classes = {SparkConf.class, SparkLemmatizer.class})
+        classes = {LLMTextConf.class, LLMService.class, SparkConf.class, SparkLemmatizer.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SparkAndLLMLemmatizerTest {
     @Autowired
-    private SparkLemmatizer sparkLemmatizer;
+    private LLMService LLMLemmatizer;
 
-    private final LLMService LLMLemmatizer = new LLMService(
-            LLMConfSimpleFactory.createLLMConf("CROQ","^", "750", "true")
-    );
+    @Autowired
+    private SparkLemmatizer sparkLemmatizer;
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();
     private final static List<CorrectAndTotal> LLMResults = new ArrayList<>();
@@ -51,7 +50,7 @@ public class SparkAndLLMLemmatizerTest {
     })
     @Order(1)
     void verifyThatLLMLemmatizerIsBetterThatSpark(String input, String expected, String lang) {
-        final double APLHA = 1.;
+        final double ALPHA = 1.;
 
         String text = getInputText(input);
         List<String> lemmas = getExpectedList(expected);
@@ -69,9 +68,9 @@ public class SparkAndLLMLemmatizerTest {
                 " and and actual rate is: " + LLMResult.rate());
 
         assertTrue(
-                Tests.statisticsOneDirectTest(sparkResult, LLMResult, APLHA),
+                Tests.statisticsOneDirectTest(sparkResult, LLMResult, ALPHA),
                 "Zero hypothesis (that LLM lemmatizer is better or same than Spark lemmatizer) is rejected in favor of an alternative hypothesis (that LLM lemmatizer is worse than Spark lemmatizer) " +
-                        "on level " + APLHA + "%."
+                        "on level " + ALPHA + "%."
         );
     }
 

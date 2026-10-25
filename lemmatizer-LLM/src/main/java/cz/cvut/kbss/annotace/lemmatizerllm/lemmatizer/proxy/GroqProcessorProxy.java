@@ -35,9 +35,11 @@ public class GroqProcessorProxy extends ProcessorProxy {
 
     @Override
     public ProcessorProxy setTextAndGet(String text, String lang, Stream<String> keys) {
-        if (locked.get()) throw new RuntimeException("Cannot process text");
-        locked.set(true);
-        setLanguage(Language.valueOf(lang.toUpperCase()));
+        synchronized (locked) {
+            if (locked.get()) throw new RuntimeException("Cannot process text");
+            setLanguage(Language.valueOf(lang.toUpperCase()));
+            locked.set(true);
+        }
         this.text = text;
         groqClient = new GroqClient(keys.map(System::getenv).toArray(String[]::new), "openai/gpt-oss-20b");
         return this;
@@ -68,18 +70,13 @@ public class GroqProcessorProxy extends ProcessorProxy {
                     catch (InterruptedException ignored) {}
                 }
                 final String prompt = promptGenerator.prompt(sentences[i]);
-                String response = "";
-                try {
-                    response = send(prompt, getMaxTokens(sentences[i].length()), i);
-                }
-                catch (RuntimeException ignored) {
-
-                }
+                String response = send(prompt, getMaxTokens(sentences[i].length()), i);
                 paragraphResults.addAll(stringParser.responseWordParser(response));
             }
             results.addAll(processParagraph(paragraphResults, paragraph));
         }
 
+        locked.set(false);
         return results;
     }
 
@@ -167,6 +164,7 @@ public class GroqProcessorProxy extends ProcessorProxy {
                     .sorted()
                     .map(it -> it.concat("\n"))
                     .reduce("", (a, b) -> a.concat("\n").concat(b));
+            throw e;
         }
         return responseLemmaParser(response);
     }

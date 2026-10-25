@@ -5,6 +5,13 @@ annotace:
   lemmatizer: llm
   ker:
     service: http://lindat.mff.cuni.cz/services/ker?language=cs&threshold=0.04&maximum-words=30
+  llm:
+    api: GROQ
+    api-keys: GROQ_API_KEY,GROQ_API_KEY_2
+    delimiter: ^
+    max-sentence-length: 400
+    use-post-processing: true
+    select-one-char-words: true
   spark:
     lemmatizers:
       cs: model:lemma

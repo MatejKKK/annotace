@@ -7,7 +7,6 @@ import cz.cvut.kbss.annotace.lemmatizerllm.text_service.postprocessor.SublemmaPr
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
@@ -115,7 +114,10 @@ public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
                     final String space = paragraph.substring(lastUsedIndex);
 
                     if (!space.isBlank()) {
-                        results.addAll(findAdditionalResult(space.toCharArray()));
+                        List<SingleLemmaResult> addit = findAdditionalResult(space.toCharArray());
+                        if (addit.size() < 3) {
+                            results.addAll(addit);
+                        }
                     }
                 }
             }

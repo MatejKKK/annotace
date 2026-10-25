@@ -8,9 +8,24 @@ apply plugin: "io.spring.dependency-management"
 dependencies {
     implementation project(":api")
 
-    implementation "cz.cvut.kbss:morphodita:0.0.1"
+    def localJar = rootProject.file('morphodita.jar')
+    if (localJar.exists()) {
+        implementation files(localJar)
+    } else {
+        implementation "cz.cvut.kbss:morphodita:0.0.1"
+    }
+
     implementation(libs.spring.boot.web)
 
     testImplementation(libs.spring.aspects)
     testImplementation(libs.spring.boot.test)
+}
+
+test {
+    def root = rootProject.projectDir.absolutePath
+
+    jvmArgs "-Djava.library.path=${root}"
+    systemProperty 'annotace.morphodita.taggers.cs', "${root}/czech-morfflex2.1-pdtc2.0-250909.tagger"
+
+    testLogging { events "passed", "skipped", "failed" }
 }

@@ -23,6 +23,7 @@ import cz.cvut.kbss.annotace.lemmatizer.MorphoDitaServiceJNI;
 import cz.cvut.kbss.annotace.lemmatizer.MorphoDitaServiceOnline;
 import cz.cvut.kbss.annotace.lemmatizer.SparkLemmatizer;
 import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class LemmatizerConfig {
             }
             case "llm" -> {
                 log.info("Instantiating LLM lemmatizer.");
-                yield new LLMService(context.getBean(LLMConf.class));
+                yield new LLMService(context.getBean(LLMTextConf.class));
             }
             default -> {
                 log.info("Instantiating Apache Spark lemmatizer.");
