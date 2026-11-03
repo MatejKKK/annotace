@@ -5,7 +5,6 @@ import cz.cvut.kbss.annotace.lemmatizerllm.exception.TruncatedResponseException;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.LongPromptTexts;
 import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.einfra.EInfraClient;
 import cz.cvut.kbss.annotace.lemmatizerllm.model.Language;
-import cz.cvut.kbss.textanalysis.exception.UnsupportedLanguageException;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 
 import java.util.ArrayList;
@@ -62,17 +61,22 @@ public class EInfraProccesorProxy extends ProcessorProxy {
     }
 
     @Override
-    List<List<SingleLemmaResult>> process() {
+    public void setKey(String key) {
+        if (locked.get()) throw new RuntimeException("Cannot process text");
+        eInfraClient = new EInfraClient(new String[]{System.getenv(key)}, "openai/gpt-oss-20b");
+    }
+
+    @Override
+    void process() {
         System.out.println("Starting Groq process on thread " + index);
         final String[] paragraphs = stream(mergeParagraphs(
                 extractParagraphs(removeBorderSpacesFromText(text)),
                 conf.maxParagraphLength()
         )).map(it -> it + PARAGRAPH_MERGE_MARK).toArray(String[]::new);
-        final List<List<SingleLemmaResult>> results = new ArrayList<>();
 
         for (final String paragraph : paragraphs) {
             promptGenerator.setPromptTexts(new LongPromptTexts());
-            eInfraClient.setModel("openai/gpt-oss-20b");
+            eInfraClient.setModel(FIRST_PASS_MODEL);
             lemmaResultFactory.setParagraph(paragraph);
             final List<String> paragraphResults = new ArrayList<>();
 
@@ -90,8 +94,13 @@ public class EInfraProccesorProxy extends ProcessorProxy {
                 try {
                     response = send(prompt, getMaxTokens(sentences[i].length()), i);
                 }
-                catch (RuntimeException ignored) {
-
+                catch (RuntimeException e) {
+                    // Previously silently ignored, which turned every failure into a
+                    // quiet gap in the output (missing lemmas for this sentence) with
+                    // no trace. At minimum log it so a real failure is visible instead
+                    // of looking like a correctly-processed, lemma-less sentence.
+                    System.out.println("Sentence %d in paragraph failed after retries, skipping it: %s"
+                            .formatted(i, e.getMessage()));
                 }
                 paragraphResults.addAll(stringParser.responseWordParser(response));
             }
@@ -99,7 +108,6 @@ public class EInfraProccesorProxy extends ProcessorProxy {
         }
 
         locked.set(false);
-        return results;
     }
 
     private String send(String prompt, int maxTokens, int orderInTask) {

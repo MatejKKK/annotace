@@ -42,7 +42,6 @@ public final class GroqClient extends BaseLLMClient {
 
     @Override
     protected HttpRequest buildRequest(String prompt, int maxTokens) throws JsonProcessingException {
-        System.out.println(model + ": " + prompt);
         return buildRequest(List.of(new GroqRequest.Message("user", prompt)), maxTokens);
     }
 

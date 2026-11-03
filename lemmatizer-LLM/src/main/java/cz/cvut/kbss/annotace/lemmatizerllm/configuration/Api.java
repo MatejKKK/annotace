@@ -6,5 +6,6 @@ public enum Api {
     LOCAL_QWEN,
     EINFRA_QWEN,
     EINFRA_KIMI,
-    EINFRA_GLM
+    EINFRA_GLM,
+    CLAUDE_SONNET
 }

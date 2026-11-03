@@ -9,7 +9,7 @@ public class TextPreprocessor {
         for (int i = 0; i < paragraphs.length; ++i) {
                 result.append(removeBorderSpacesFromParagraph(paragraphs[i]).concat(i == paragraphs.length - 1 ? "" : "\n\n\n"));
         }
-        System.out.println("removed: " + result.toString());
+        //System.out.println("removed: " + result.toString());
         return result.toString();
     }
 

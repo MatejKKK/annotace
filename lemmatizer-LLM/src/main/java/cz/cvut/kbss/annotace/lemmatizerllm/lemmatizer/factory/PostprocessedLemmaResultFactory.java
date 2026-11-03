@@ -59,7 +59,10 @@ public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
             currIndex = index + lastResult.getToken().length();
         }
 
-        return results;
+        final List<SingleLemmaResult> res = sublemmaProcessor.process(results);
+        res.forEach(it -> System.out.print(it.getLemma() + it.getTrailingSpaces()));
+        System.out.println();
+        return res;
     }
 
     private List<SingleLemmaResult> _createSingleLemmaResult(String line) {
@@ -173,6 +176,9 @@ public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
             else {
                 final String token = sB.toString();
                 if (!(token.isBlank() || token.contains(TextExtractor.PARAGRAPH_MERGE_MARK))) {
+                    if (additionalResult.size() > 2) {
+                        return List.of();
+                    }
                     additionalResult.addLast(new SingleLemmaResult(
                             token,
                             token,
@@ -184,6 +190,10 @@ public class PostprocessedLemmaResultFactory extends LemmaResultFactory {
                 spacesCount = 0;
                 sB.append(c);
             }
+        }
+
+        if (additionalResult.size() > 2) {
+            return List.of();
         }
 
         final String token = sB.toString();

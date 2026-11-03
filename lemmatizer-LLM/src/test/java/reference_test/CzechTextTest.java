@@ -1,4 +1,4 @@
-package groq.reference_test;
+package reference_test;
 
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.params.ParameterizedTest;

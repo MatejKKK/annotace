@@ -42,6 +42,7 @@ public abstract class ProcessorProxy implements Runnable {
     protected int index;
     protected String text;
     protected final AtomicBoolean locked = new AtomicBoolean(false);
+    protected List<List<SingleLemmaResult>> results = new ArrayList<>();
 
     protected ProcessorProxy(LLMConf conf, Language language) {
         this.conf = conf;
@@ -53,27 +54,29 @@ public abstract class ProcessorProxy implements Runnable {
 
     @Override
     final public void run() {
+        System.out.println("Starting process on thread " + index);
         try {
-            List<List<SingleLemmaResult>> results = process();
+            process();
+        }
+        finally {
             int diff = 0;
             do {
                 try {
                     Thread.sleep(Math.min(diff == 1 ? 50L : diff * 250L, 5_000L));
                 }
-                catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                catch (InterruptedException ignore) {}
                 diff = ResultsStore.addResults(results, index);
             } while (diff != 0);
-        }
-        finally {
+            results = new  ArrayList<>();
             locked.set(false);
         }
     }
 
     public abstract ProcessorProxy setTextAndGet(String text, String lang, Stream<String> keys);
 
-    abstract List<List<SingleLemmaResult>> process();
+    public abstract void setKey(String key);
+
+    abstract void process();
 
     final public List<List<SingleLemmaResult>> process(String text, String lang) {
         synchronized (locked) {
@@ -88,7 +91,10 @@ public abstract class ProcessorProxy implements Runnable {
         }
         this.text = text;
         try {
-            return process();
+            process();
+            List<List<SingleLemmaResult>> results = this.results;
+            this.results = new ArrayList<>();
+            return results;
         }
         finally {
             locked.set(false);
@@ -102,6 +108,8 @@ public abstract class ProcessorProxy implements Runnable {
     }
 
     protected List<List<SingleLemmaResult>> responseLemmaParser(String response) {
+        if (response.isBlank()) return List.of();
+
         List<List<SingleLemmaResult>> results = new ArrayList<>();
         List<SingleLemmaResult> result = new ArrayList<>();
         final String[] lines = response.split("\n");

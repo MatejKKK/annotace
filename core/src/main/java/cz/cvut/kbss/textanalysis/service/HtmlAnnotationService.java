@@ -17,7 +17,6 @@
  */
 package cz.cvut.kbss.textanalysis.service;
 
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
 import cz.cvut.kbss.textanalysis.Constants;
 import cz.cvut.kbss.textanalysis.dto.TextAnalysisInput;
 import cz.cvut.kbss.textanalysis.keywordextractor.KeywordExtractorAPI;
@@ -66,19 +65,15 @@ public class HtmlAnnotationService {
 
     private final KeywordExtractorAPI keywordExtractionService;
 
-    private final LemmatizerApi lemmatizerApi;
-
     private static final double MIN_LEMMA_COVERAGE = 0.8;
 
     @Autowired
     public HtmlAnnotationService(AnnotationService annotationService,
                                  OntologyService ontologyService,
-                                 KeywordExtractorAPI kerService,
-                                 LemmatizerApi lemmatizerApi) {
+                                 KeywordExtractorAPI kerService) {
         this.annotationService = annotationService;
         this.ontologyService = ontologyService;
         this.keywordExtractionService = kerService;
-        this.lemmatizerApi = lemmatizerApi;
     }
 
 
@@ -129,9 +124,10 @@ public class HtmlAnnotationService {
             kerResult = KeywordExtractorResult.createEmpty();
         }
 
-        if (lemmatizerApi instanceof LLMService) {
-            final String fullText = String.join("\n\n\n\n", chunks);
-            final LemmatizerResult llmResult = lemmatizerApi.process(fullText, lang);
+        final String fullText = String.join("\n\n\n\n", chunks);
+
+        if (annotationService.processAllTogether(fullText)) {
+            final LemmatizerResult llmResult = annotationService.processLemmatization(fullText, lang);
 
             final List<List<SingleLemmaResult>> perChunk;
             if (llmResult != null && llmResult.getResult() != null
@@ -145,14 +141,17 @@ public class HtmlAnnotationService {
                         llmResult != null && llmResult.getResult() != null ? llmResult.getResult().size() : 0,
                         chunks.size());
                 final List<Chunk> aligned = new ArrayList<>(align(chunks, llmResult));
-                for (int i = 0; i < chunks.size() && i < aligned.size(); ++i) {
-                    if (aligned.get(i).coverage() < MIN_LEMMA_COVERAGE) {
+
+                int errors = 0;
+                for (int i = 0; i < chunks.size() && errors < 5; ++i) {
+                    if (i >= aligned.size() || aligned.get(i).coverage() < MIN_LEMMA_COVERAGE) {
                         // The LLM dropped or garbled this chunk -> lemmatize it separately.
                         try {
-                            final LemmatizerResult retry = lemmatizerApi.process(chunks.get(i), lang);
+                            final LemmatizerResult retry = annotationService.processLemmatization(chunks.get(i), lang);
                             aligned.set(i, align(List.of(chunks.get(i)), retry).getFirst());
                         }
                         catch (Exception ex) {
+                            ++errors;
                             log.warn("Re-lemmatization of chunk {} failed.", i, ex);
                         }
                     }
@@ -182,9 +181,9 @@ public class HtmlAnnotationService {
             }
 
             return this.annotate(textChunk -> {
-                final List<Word[]> queue = wordsByChunk.get(textChunk);
-                if (queue != null && !queue.isEmpty()) {
-                    return queue.removeFirst();
+                final List<Word[]> words = wordsByChunk.get(textChunk);
+                if (!(words == null || words.isEmpty())) {
+                    return words.removeFirst();
                 }
                 return new Word[]{new Word("", "", textChunk, "")}; // text stays unchanged
             }, doc, lang).toString();
@@ -232,13 +231,13 @@ public class HtmlAnnotationService {
 
         Elements elements = output.getAllElements();
         for (Element element : elements) {
-            System.out.print(element.html());
+            //System.out.print(element.html());
             if (isTermOccurrence(element) && element.hasText()) {
-                System.out.print(": " + element.text());
+                //System.out.print(": " + element.text());
                 // Unwrap any suggested occurrence with score attribute to keep the annotations up-to-date with the vocabulary terms. Keep the assigned occurrences untouched.
                 element.select("span[score]").unwrap();
             }
-            System.out.println();
+            //System.out.println();
         }
 
         output.outputSettings().prettyPrint(false);

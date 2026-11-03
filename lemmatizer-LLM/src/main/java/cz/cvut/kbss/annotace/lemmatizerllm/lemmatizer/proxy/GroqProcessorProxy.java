@@ -26,10 +26,18 @@ public class GroqProcessorProxy extends ProcessorProxy {
         groqClient = new GroqClient(keys, "openai/gpt-oss-20b");
     }
 
+    @Deprecated
     public GroqProcessorProxy(LLMConf conf, Language language, boolean parRem, boolean keyRem, int index) {
         this(conf, language);
         if (keyRem) this.priority = parRem ? 6 : 4;
         else this.priority = parRem ? 8 : 5;
+        this.index = index;
+    }
+
+    public GroqProcessorProxy(LLMConf conf, Language language, int index) {
+        this(conf, language);
+//        if (keyRem) this.priority = parRem ? 6 : 4;
+//        else this.priority = parRem ? 8 : 5;
         this.index = index;
     }
 
@@ -41,18 +49,23 @@ public class GroqProcessorProxy extends ProcessorProxy {
             locked.set(true);
         }
         this.text = text;
+        System.out.println("text for proxy: " + text + "\n");
         groqClient = new GroqClient(keys.map(System::getenv).toArray(String[]::new), "openai/gpt-oss-20b");
         return this;
     }
 
     @Override
-    List<List<SingleLemmaResult>> process() {
-        System.out.println("Starting Groq process on thread " + index);
+    public void setKey(String key) {
+        if (locked.get()) throw new RuntimeException("Cannot process text");
+        groqClient = new GroqClient(new String[]{System.getenv(key)}, "openai/gpt-oss-20b");
+    }
+
+    @Override
+    void process() {
         final String[] paragraphs = stream(mergeParagraphs(
                 extractParagraphs(removeBorderSpacesFromText(text)),
                 conf.maxParagraphLength()
         )).map(it -> it + PARAGRAPH_MERGE_MARK).toArray(String[]::new);
-        final List<List<SingleLemmaResult>> results = new ArrayList<>();
 
         for (final String paragraph : paragraphs) {
             promptGenerator.setPromptTexts(new LongPromptTexts());
@@ -77,7 +90,6 @@ public class GroqProcessorProxy extends ProcessorProxy {
         }
 
         locked.set(false);
-        return results;
     }
 
     @NonNull
@@ -91,7 +103,7 @@ public class GroqProcessorProxy extends ProcessorProxy {
 
         for (int attempt = 0; attempt <= MAX_RETRIES; ++attempt) {
             try {
-                return this.groqClient.sendWithMemory(prompt, maxTokens);
+                return this.groqClient.send(prompt, maxTokens);
             }
             catch (TruncatedResponseException e) {
                 if (attempt >= MAX_RETRIES) {
@@ -115,6 +127,9 @@ public class GroqProcessorProxy extends ProcessorProxy {
                             .formatted(attempt, currentMaxTokens), e);
                 }
                 if (!(e.getMessage() == null || e.getMessage().isEmpty())) {
+                    if (e.getMessage().contains("Error sending request: Empty content in response")) {
+                        return "";
+                    }
                     if (e.getMessage().contains("Rate limit reached for model") && e.getMessage().contains("tokens per minute")) {
                         final int startIndex = e.getMessage().indexOf("Please try again in ");
                         if (startIndex == -1) {
@@ -138,6 +153,9 @@ public class GroqProcessorProxy extends ProcessorProxy {
                         } catch (InterruptedException ignore) {
                         }
                     }
+                    else if (e.getMessage().contains("tokens per day")) {
+                        throw e;
+                    }
                     else if (e.getMessage().contains("Empty content in response (finish_reason=stop).")) {
                         ++attempt;
                     }
@@ -160,10 +178,10 @@ public class GroqProcessorProxy extends ProcessorProxy {
             response = send(prompt, getMaxTokens(paragraph.length()), 0);
         }
         catch (RuntimeException e) {
-            response = paragraphResults.stream()
-                    .sorted()
-                    .map(it -> it.concat("\n"))
-                    .reduce("", (a, b) -> a.concat("\n").concat(b));
+//            response = paragraphResults.stream()
+//                    .sorted()
+//                    .map(it -> it.concat("\n"))
+//                    .reduce("", (a, b) -> a.concat("\n").concat(b));
             throw e;
         }
         return responseLemmaParser(response);

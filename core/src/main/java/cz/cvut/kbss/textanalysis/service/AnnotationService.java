@@ -44,6 +44,10 @@ public class AnnotationService {
         this.lemmatizer = lemmatizer;
     }
 
+    public LemmatizerResult processLemmatization(String text, String lang) {
+        return lemmatizer.process(text, lang);
+    }
+
     public List<Word> getAnnotations(final String textChunk,
                                      final List<QueryResult> queryResultList,
                                      final KeywordExtractorResult result, String lang)
@@ -66,6 +70,10 @@ public class AnnotationService {
         }
     }
 
+    public boolean processAllTogether(final String text) {
+        return lemmatizer.processAllTogether(text);
+    }
+
     private List<Word> _getAnnotations(final String textChunk,
                                        final List<QueryResult> queryResultList,
                                        final KeywordExtractorResult result, String lang) {
@@ -83,8 +91,6 @@ public class AnnotationService {
 
         for (List<SingleLemmaResult> results : lemmatizerResult.getResult()) {
             for (SingleLemmaResult result : results) {
-
-                System.out.println("slr:" + singleLemmaResultObserver(result));
 
                 List<Phrase> matchedAnnotations = new ArrayList<>();
                 boolean isKeyword = kerResult.getKeywords().contains(result.getLemma());
@@ -140,11 +146,5 @@ public class AnnotationService {
      */
     public List<String> getSupportedLanguages() {
         return lemmatizer.getSupportedLanguages();
-    }
-
-
-
-    private String singleLemmaResultObserver(SingleLemmaResult singleLemmaResult) {
-        return "result: " + singleLemmaResult.getLemma() + ", token: " + singleLemmaResult.getToken();
     }
 }

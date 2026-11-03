@@ -6,6 +6,7 @@ import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.PostprocessedLemma
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleLemmaResultFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.LemmaResultFactory;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.AbstractPromptTexts;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.proxy.ClaudeProcessorProxy;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.proxy.EInfraProccesorProxy;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.proxy.ProcessorProxy;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.proxy.GroqProcessorProxy;
@@ -14,14 +15,18 @@ import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.LongPromptTexts;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.promts.PromptGenerator;
 import cz.cvut.kbss.annotace.lemmatizerllm.llm_api.croq.GroqClient;
 import cz.cvut.kbss.annotace.lemmatizerllm.text_service.StringParser;
+import cz.cvut.kbss.annotace.lemmatizerllm.text_service.TextDivider;
 import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import lombok.extern.slf4j.Slf4j;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import static cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.factory.SimpleLemmaResultFactory.*;
@@ -61,6 +66,7 @@ public class LLMService implements LemmatizerApi {
         this.processorProxy = switch (this.conf.api()) {
             case GROQ -> new GroqProcessorProxy(this.conf, language);
             case EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM -> new EInfraProccesorProxy(this.conf, language);
+            case CLAUDE_SONNET -> new ClaudeProcessorProxy(this.conf, language);
             default -> throw new RuntimeException("Unknown api type");
         };
     }
@@ -76,6 +82,7 @@ public class LLMService implements LemmatizerApi {
         this.processorProxy = switch (conf.api()) {
             case GROQ -> new GroqProcessorProxy(conf, language);
             case EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM -> new EInfraProccesorProxy(conf, language);
+            case CLAUDE -> new ClaudeProcessorProxy(conf, language);
             default -> throw new RuntimeException("Unknown api type");
         };
     }
@@ -94,7 +101,11 @@ public class LLMService implements LemmatizerApi {
         final List<List<SingleLemmaResult>> results;
 
         switch (determineThreadMode(text)) {
-            case SINGLE_THREAD -> results = processorProxy.process(text, lang);
+            case SINGLE_THREAD -> {
+                final Random random = new SecureRandom();
+                processorProxy.setKey(conf.apiKeys()[random.nextInt(0, conf.apiKeys().length)]);
+                results = processorProxy.process(text, lang);
+            }
             case FEW_THREADS -> {
                 List<Thread> proxies = launchProcessorProxiesSingleKeyPerProxy(text, lang).stream()
                         .map(it -> {
@@ -173,15 +184,19 @@ public class LLMService implements LemmatizerApi {
         return AbstractPromptTexts.SUPPORTED_LANGUAGES;
     }
 
+    @Override
+    public boolean processAllTogether(String text) {
+        return !determineThreadMode(text).equals(ThreadMode.SINGLE_THREAD);
+    }
+
     private enum ThreadMode {
         SINGLE_THREAD, FEW_THREADS, MANY_THREADS
     }
 
-
     private ThreadMode determineThreadMode(String text) {
         int countOfPar = text.split(PARAGRAPH_BREAK).length;
         return switch (conf.api()) {
-            case GROQ, EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM -> {
+            case GROQ, EINFRA_QWEN, EINFRA_KIMI, EINFRA_GLM, CLAUDE_SONNET -> {
                 boolean longText = countOfPar > 1 && text.length() > 1_000;
                 if (conf.apiKeys().length < 2 || !longText) {
                     yield ThreadMode.SINGLE_THREAD;
@@ -192,7 +207,7 @@ public class LLMService implements LemmatizerApi {
                 yield countOfPar > 8 && text.length() > 3_000 ?
                         ThreadMode.MANY_THREADS : ThreadMode.FEW_THREADS;
             }
-            default -> throw new  RuntimeException("Unsupported api type yet");
+            default -> throw new RuntimeException("Unsupported api type yet");
         };
     }
 
@@ -205,19 +220,14 @@ public class LLMService implements LemmatizerApi {
         int keyRemainder = 0;
         int keyCurrIndex = keysPerThread;
 
-        final int paragraphsPerThread = (int) Math.ceil((double) paragraphs.length / threadsCount);
-        int paragraphRemainder = (paragraphs.length % threadsCount) - 1;
-        int paragraphCurrIndex = paragraphRemainder > -1 ? paragraphsPerThread : paragraphsPerThread + 1;
+        final Iterator<String> dividedTexts = TextDivider.merge(paragraphs, threadsCount);
 
         this.processorProxy.setIndex(0);
-        this.processorProxy.setPriority(paragraphCurrIndex == paragraphsPerThread ? 5 : 7);
+        //this.processorProxy.setPriority(paragraphCurrIndex == paragraphsPerThread ? 5 : 7);
 
         List<ProcessorProxy> proxies = new  ArrayList<>(List.of(
                 this.processorProxy.setTextAndGet(
-                        Arrays.stream(paragraphs)
-                                .limit(paragraphCurrIndex)
-                                .map(it -> it.concat(PARAGRAPH_BREAK))
-                                .collect(Collectors.joining()),
+                        dividedTexts.next(),
                         lang,
                         Arrays.stream(keys).limit(keyCurrIndex))
         ));
@@ -226,17 +236,13 @@ public class LLMService implements LemmatizerApi {
             final boolean keyRemainded = keyRemainder-- > 0;
             final int keyDiff = keysPerThread + (keyRemainded ? 1 : 0);
 
-            final boolean paragraphRemainded = paragraphRemainder-- > 0;
-            final int paragraphDiff = paragraphsPerThread + (paragraphRemainded ? 1 : 0);
+            //final boolean paragraphRemainded = paragraphRemainder-- > 0;
+            //final int paragraphDiff = paragraphsPerThread + (paragraphRemainded ? 1 : 0);
 
             proxies.add(
-                    new GroqProcessorProxy(conf, language, paragraphRemainded, keyRemainded, i)
+                    new GroqProcessorProxy(conf, language, i)
                             .setTextAndGet(
-                                    Arrays.stream(paragraphs)
-                                            .skip(paragraphCurrIndex)
-                                            .limit(paragraphDiff)
-                                            .map(it -> it.concat(PARAGRAPH_BREAK))
-                                            .collect(Collectors.joining()),
+                                    dividedTexts.next(),
                                     lang,
                                     Arrays.stream(keys)
                                             .skip(keyCurrIndex)
@@ -245,7 +251,7 @@ public class LLMService implements LemmatizerApi {
             );
 
             keyCurrIndex += keyDiff;
-            paragraphCurrIndex += paragraphDiff;
+            //paragraphCurrIndex += paragraphDiff;
         }
         return proxies;
     }
@@ -339,4 +345,6 @@ public class LLMService implements LemmatizerApi {
         final double estimated = BASE_TOKENS + TOKENS_PER_WORD * Math.pow(paragraphLength / 5., GROWTH_EXPONENT);
         return (int) Math.min(Math.min(MAX_TOKENS, Math.max(MIN_TOKENS, Math.ceil(estimated))), 8_000);
     }
+
+
 }

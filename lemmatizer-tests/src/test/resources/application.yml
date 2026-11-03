@@ -8,7 +8,7 @@ annotace:
     select-one-char-words: false
   morphodita:
     taggers:
-      cs: czech-morfflex-pdt-161115.tagger
+      cs: czech-morfflex2.1-pdtc2.0-250909.tagger
       en: english-morphium-wsj-140407.tagger
   spark:
     lemmatizers:

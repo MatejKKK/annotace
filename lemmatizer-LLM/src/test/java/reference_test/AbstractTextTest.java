@@ -1,4 +1,4 @@
-package groq.training_test;
+package reference_test;
 
 import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
 import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
@@ -13,5 +13,5 @@ abstract class AbstractTextTest {
 
     protected final LLMService lemmatizer;
 
-    protected abstract void testText(String input, String expected, String expectedParagraphsCountParam);
+    protected abstract void testText(String input, String expected);
 }

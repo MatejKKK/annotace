@@ -50,9 +50,7 @@ public abstract class BaseLLMClient implements LLMClient {
 
         try {
             HttpRequest request = buildRequest(prompt, maxTokens);
-            HttpResponse<String> response = null;
-
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
                 throw new RuntimeException("API error: status=%d, body=%s".formatted(

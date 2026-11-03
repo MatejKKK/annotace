@@ -39,4 +39,9 @@ public interface LemmatizerApi {
      * @return List of languages
      */
     List<String> getSupportedLanguages();
+
+
+    default boolean processAllTogether(String text) {
+        return false;
+    }
 }

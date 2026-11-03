@@ -1,4 +1,4 @@
-package einfra.training_test;
+package training_test;
 
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,9 +17,9 @@ class EnglishTextTest extends AbstractTextTest {
     @ParameterizedTest
     @CsvSource({
             //"src/test/resources/en/inputs/1.txt,src/test/resources/en/expected/1.txt,1",
-            "src/test/resources/en/inputs/2.txt,src/test/resources/en/expected/2.txt,1",
+            //"src/test/resources/en/inputs/2.txt,src/test/resources/en/expected/2.txt,1",
             //"src/test/resources/en/inputs/3.txt,src/test/resources/en/expected/3.txt,3",
-            //"src/test/resources/en/inputs/4.txt,src/test/resources/en/expected/4.txt,33",
+            "src/test/resources/en/inputs/4.txt,src/test/resources/en/expected/4.txt,33",
     })
     @Override
     protected void testText(String input, String expected, String expectedParagraphsCountParam) {
@@ -28,17 +28,17 @@ class EnglishTextTest extends AbstractTextTest {
         List<String> lemmas = getExpectedList(expected);
         LemmatizerResult result = lemmatizer.process(text, "en");
 
+        System.out.println("AAAAAAAA 1");
         result.getResult().forEach(its -> {
-            its.forEach(it -> System.out.print(it.getLemma() + " "));
+            its.forEach(it -> System.out.print(it.getLemma() + it.getTrailingSpaces()));
             System.out.println();
             System.out.println();
             System.out.println();
             System.out.println();
         });
+        System.out.println("AAAAAAAA 2");
 
         assertTrue(completeRateTest(lemmas, text, result, 92.5, Math.min(10, lemmas.size() / 2)));
         assertEquals(expectedParagraphsCount, result.getResult().size(), "Paragraphs count mismatch");
-
-//        System.out.println(System.getenv("INFRA_1"));
     }
 }
