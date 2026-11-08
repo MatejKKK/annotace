@@ -2,16 +2,20 @@ application:
   version: ${version}
 
 annotace:
-  lemmatizer: llm
+  lemmatizer: morphodita
   ker:
     service: http://lindat.mff.cuni.cz/services/ker?language=cs&threshold=0.04&maximum-words=30
-  llm:
+  llm-lem:
     api: GROQ
     api-keys: GROQ_API_KEY_2,GROQ_API_KEY
     delimiter: ^
     max-sentence-length: 400
     use-post-processing: true
     select-one-char-words: true
+  llm-te:
+    api: GROQ
+    api-keys: GROQ_API_KEY_2,GROQ_API_KEY
+    delimiter: ^^
   spark:
     lemmatizers:
       cs: model:lemma

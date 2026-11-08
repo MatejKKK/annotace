@@ -50,6 +50,8 @@ public class KerService implements KeywordExtractorAPI {
 
     public KeywordExtractorResult process(final String chunks) {
 
+        System.out.println("key-word-extr: " + chunks);
+
         final String kerUrl = config.getService();
 
         final File file;

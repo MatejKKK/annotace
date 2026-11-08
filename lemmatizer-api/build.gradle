@@ -9,16 +9,59 @@ repositories {
     mavenCentral()
 }
 
+apply plugin: "org.springframework.boot"
+apply plugin: "io.spring.dependency-management"
+
+def applicationVersion = project.version
+
+processResources {
+    filesMatching("application.yml") {
+        expand(["version": applicationVersion])
+    }
+}
+
 dependencies {
     implementation project(":api")
+    implementation project(":lemmatizer-spark")
+    implementation project(":lemmatizer-morphodita")
     implementation project(":lemmatizer-LLM")
 
+    testImplementation(libs.junit.params)
     implementation(libs.spring.boot.web)
-    implementation("org.jsoup:jsoup:1.23.2")
+    testImplementation(libs.spring.boot.test) {
+        exclude group: "org.junit.vintage", module: "junit-vintage-engine"
+    }
+    def localMorphoJar = rootProject.file('morphodita.jar')
+    if (localMorphoJar.exists()) {
+        implementation files(localMorphoJar)
+    } else {
+        implementation "cz.cvut.kbss:morphodita:0.0.1"
+    }
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+//    def root = rootProject.projectDir.absolutePath
+
+//    def czModel = file("${root}/czech-morfflex2.1-pdtc2.0-250909.tagger")
+//    if (czModel.exists()) {
+//        systemProperty 'annotace.morphodita.taggers.cs', czModel.absolutePath
+//    }
 }
 
 test {
-    useJUnitPlatform()
+    //jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.nio=ALL-UNNAMED", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang.invoke=ALL-UNNAMED", "-Djava.library.path=${root}"
+    testLogging { events "passed", "skipped", "failed" }
+}
+
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy {
+            dependencySubstitution {
+                substitute module("org.codehaus.janino:janino") using module("org.codehaus.janino:janino:3.1.9")
+                substitute module("org.codehaus.janino:commons-compiler") using module("org.codehaus.janino:commons-compiler:3.1.9")
+            }
+        }
+    }
+}
+
+bootJar {
+    archiveFileName = "annotace-${project.version}.jar"
 }
