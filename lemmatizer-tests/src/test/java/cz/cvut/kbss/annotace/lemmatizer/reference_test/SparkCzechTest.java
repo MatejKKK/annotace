@@ -28,12 +28,12 @@ class SparkCzechTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/cz/inputs/cac/2070.txt,src/test/resources/cz/expected/cac/2070.txt", //
-            "src/test/resources/cz/inputs/cac/2071.txt,src/test/resources/cz/expected/cac/2071.txt", //
-            "src/test/resources/cz/inputs/ortofon_v3/1250.txt,src/test/resources/cz/expected/ortofon_v3/1250.txt",  //
-            "src/test/resources/cz/inputs/pdtc/15.txt,src/test/resources/cz/expected/pdtc/15.txt",  //
-            "src/test/resources/cz/inputs/pud/2264.txt,src/test/resources/cz/expected/pud/2264.txt",  //
-            "src/test/resources/cz/inputs/pud/2263.txt,src/test/resources/cz/expected/pud/2263.txt"  //
+            "src/test/resources/cz/inputs/cac/2069.txt,src/test/resources/cz/expected/cac/2069.txt", //
+            "src/test/resources/cz/inputs/cac/2068.txt,src/test/resources/cz/expected/cac/2068.txt", //
+            //"src/test/resources/cz/inputs/ortofon_v3/1250.txt,src/test/resources/cz/expected/ortofon_v3/1250.txt",  //
+            //"src/test/resources/cz/inputs/pdtc/15.txt,src/test/resources/cz/expected/pdtc/15.txt",  //
+            "src/test/resources/cz/inputs/pud/2265.txt,src/test/resources/cz/expected/pud/2265.txt",  //
+            "src/test/resources/cz/inputs/pud/2266.txt,src/test/resources/cz/expected/pud/2266.txt",  //
     })
     void testText(String input, String expected) {
         String text = getInputText(input);

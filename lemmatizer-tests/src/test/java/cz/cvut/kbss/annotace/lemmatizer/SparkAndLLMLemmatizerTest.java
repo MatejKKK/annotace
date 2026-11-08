@@ -3,8 +3,8 @@ package cz.cvut.kbss.annotace.lemmatizer;
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
 import cz.cvut.kbss.annotace.configuration.SparkConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMLemmatizerTextConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMLemmatizer;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -28,11 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
-        classes = {LLMTextConf.class, LLMService.class, SparkConf.class, SparkLemmatizer.class})
+        classes = {LLMLemmatizerTextConf.class, LLMLemmatizer.class, SparkConf.class, SparkLemmatizer.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SparkAndLLMLemmatizerTest {
     @Autowired
-    private LLMService LLMLemmatizer;
+    private LLMLemmatizer LLMLemmatizer;
 
     @Autowired
     private SparkLemmatizer sparkLemmatizer;

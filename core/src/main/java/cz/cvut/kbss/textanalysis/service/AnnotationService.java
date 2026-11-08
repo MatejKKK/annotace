@@ -104,14 +104,15 @@ public class AnnotationService {
                         isMatched = queryResults.getSingleLemmaResults().size() == 1;
                         isNotNegation = result.isNegated() == ontologyResults.isNegated();
 
-                        if ((result.getLemma().contentEquals(ontologyResults.getLemma())
+                        //determine if this result from text is one of the finding keywords
+                        if ((result.getLemma().contentEquals(ontologyResults.getLemma())  //it is similar
                                 || result.getToken().toLowerCase()
                                          .contentEquals(ontologyResults.getToken().toLowerCase())
                                 || result.getLemma().toLowerCase()
                                          .contentEquals(ontologyResults.getToken().toLowerCase())) &&
-                                isNotNegation) {
+                                isNotNegation) {  //same negation
 
-                            Phrase matchedAnnotation = new Phrase(
+                            Phrase matchedAnnotation = new Phrase(  //actually found keyword form text
                                     queryResults.getType(),
                                     (kerResult.getKeywords().contains(result.getLemma())
                                             && (result.getToken().equals(queryResults.getLabel()))),

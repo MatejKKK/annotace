@@ -21,6 +21,9 @@ dependencies {
     implementation(libs.spring.boot.web)
     implementation("org.jsoup:jsoup:1.18.1")
 
+    // Source: https://mvnrepository.com/artifact/com.googlecode.owasp-java-html-sanitizer/owasp-java-html-sanitizer
+    implementation ("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20261103.2")
+
     implementation(libs.jackson.annotations)
     implementation("org.apache.jena:jena-arq:6.0.0")
 
