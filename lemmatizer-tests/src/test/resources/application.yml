@@ -1,5 +1,7 @@
 annotace:
-  llm:
+  llm-te:
+
+  llm-lem:
     api: GROQ
     api-keys: GROQ_API_KEY,GROQ_API_KEY_2
     delimiter: ^

@@ -1,0 +1,20 @@
+application:
+  version: ${version}
+
+annotace:
+  lemmatizer: spark
+  llm-lem:
+    api: GROQ
+    api-keys: GROQ_API_KEY_2,GROQ_API_KEY
+    delimiter: ^
+    max-sentence-length: 400
+    use-post-processing: true
+    select-one-char-words: true
+  spark:
+    lemmatizers:
+      cs: model:lemma
+      en: pipeline:explain_document_ml
+  morphodita:
+    taggers:
+      cs: czech-morfflex-pdt-161115.tagger
+      en: english-morphium-wsj-140407.tagger

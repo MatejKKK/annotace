@@ -3,8 +3,8 @@ package cz.cvut.kbss.annotace.lemmatizer;
 import cz.cvut.kbss.annotace.CorrectAndTotal;
 import cz.cvut.kbss.annotace.Tests;
 import cz.cvut.kbss.annotace.configuration.MorphoditaConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMTextConf;
-import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMService;
+import cz.cvut.kbss.annotace.lemmatizerllm.configuration.LLMLemmatizerTextConf;
+import cz.cvut.kbss.annotace.lemmatizerllm.lemmatizer.LLMLemmatizer;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -28,14 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class,
-        classes = {MorphoditaConf.class, MorphoDitaServiceJNI.class, LLMTextConf.class, LLMService.class})
+        classes = {MorphoditaConf.class, MorphoDitaServiceJNI.class, LLMLemmatizerTextConf.class, LLMLemmatizer.class})
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MorphoDitaAndLLMLemmatizerTest {
     @Autowired
     private MorphoDitaServiceJNI morphoditaLemmatizer;
 
     @Autowired
-    private LLMService LLMLemmatizer;
+    private LLMLemmatizer LLMLemmatizer;
 
     private final static List<CorrectAndTotal> sparkResults = new ArrayList<>();
     private final static List<CorrectAndTotal> LLMResults = new ArrayList<>();

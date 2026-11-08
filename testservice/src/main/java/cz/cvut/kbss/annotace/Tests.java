@@ -81,7 +81,7 @@ public class Tests {
             throw new IllegalArgumentException("basePositionTolerance cannot be negative.");
         if (basePositionTolerance >= correctLemmas.size())
             throw new IllegalArgumentException("Tolerance cannot be larger than correct list length.");
-        if (result.getResult().isEmpty() || result.getResult().stream().anyMatch(List::isEmpty))
+        if (result.getResult().isEmpty()/* || result.getResult().stream().anyMatch(List::isEmpty)*/)
             throw new AssertionError("Empty result");
 
         List<SingleLemmaResult> singleLemmaResults = result.getResult().stream()

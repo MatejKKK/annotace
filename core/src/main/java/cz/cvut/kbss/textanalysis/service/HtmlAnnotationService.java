@@ -21,7 +21,6 @@ import cz.cvut.kbss.textanalysis.Constants;
 import cz.cvut.kbss.textanalysis.dto.TextAnalysisInput;
 import cz.cvut.kbss.textanalysis.keywordextractor.KeywordExtractorAPI;
 import cz.cvut.kbss.textanalysis.keywordextractor.model.KeywordExtractorResult;
-import cz.cvut.kbss.textanalysis.lemmatizer.LemmatizerApi;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
@@ -31,13 +30,17 @@ import cz.cvut.kbss.textanalysis.service.lemma_aligner.Chunk;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.vocabulary.SKOS;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.DocumentType;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -227,23 +230,7 @@ public class HtmlAnnotationService {
     public Document annotate(final ChunkAnnotationService p, final Document doc,
                              final String lang) {
         log.debug("Annotating document has started");
-        final Document output = doc.clone();
-
-        Elements elements = output.getAllElements();
-        for (Element element : elements) {
-            //System.out.print(element.html());
-            if (isTermOccurrence(element) && element.hasText()) {
-                //System.out.print(": " + element.text());
-                // Unwrap any suggested occurrence with score attribute to keep the annotations up-to-date with the vocabulary terms. Keep the assigned occurrences untouched.
-                element.select("span[score]").unwrap();
-            }
-            //System.out.println();
-        }
-
-        output.outputSettings().prettyPrint(false);
-        final Element eHtml = output.selectFirst("html");
-        assert eHtml != null;
-        eHtml.attr("prefix", Constants.NS_TERMIT_PREFIX + ": " + Constants.NS_TERMIT);
+        final Document output = prepareDocument(doc, lang);
 
         final Map<TextNode, List<Node>> replaceMap = new HashMap<>();
 
@@ -265,7 +252,6 @@ public class HtmlAnnotationService {
             }
         }
         log.debug("Annotating document has finished");
-
         return output;
     }
 
@@ -281,10 +267,37 @@ public class HtmlAnnotationService {
     }
 
     /**
+     * @param doc is original document
+     * @param lang is language of processed document
+     * @return document with prepared attributes of html node, "!doctype html" and charset in head
+     */
+    private Document prepareDocument(Document doc, String lang) {
+        final Document output = doc.clone();
+        output.prependChild(new DocumentType("html", "", "")); //adding <!doctype html>
+        output.outputSettings().prettyPrint(false);
+
+        final Element eHtml = output.selectFirst("html");
+        assert eHtml != null;
+        Attribute langAttr = eHtml.attribute("lang");
+        if (langAttr == null || langAttr.getValue().isBlank()) {
+            PolicyFactory policy = new HtmlPolicyBuilder()  //prevention against XSS attacks
+                    .requireRelNofollowOnLinks()
+                    .toFactory();
+            eHtml.attr("lang", policy.sanitize(lang));
+        }
+        eHtml.attr("prefix", Constants.NS_TERMIT_PREFIX + ": " + Constants.NS_TERMIT);
+
+        if (output.head().children().stream().noneMatch(it -> it.is("meta[charset]"))) {
+            output.head().prependElement("meta")
+                    .attr("charset", "UTF-8");
+        }
+        return output;
+    }
+
+    /**
      * @param node is document
      * @return if typeof is kbss`s attribute
      */
-
     private boolean isTermOccurrence(Node node) {
         final String typeOf = node.attr("typeof");
         return (typeOf.equals(Constants.TERM_OCCURRENCE) || typeOf.equals(Constants.TERM_OCCURRENCE_PREFIXED));

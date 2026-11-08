@@ -18,8 +18,8 @@ class EnglishTextTest extends AbstractTextTest {
     @CsvSource({
             //"src/test/resources/en/inputs/1.txt,src/test/resources/en/expected/1.txt,1",
             //"src/test/resources/en/inputs/2.txt,src/test/resources/en/expected/2.txt,1",
-            //"src/test/resources/en/inputs/3.txt,src/test/resources/en/expected/3.txt,3",
-            "src/test/resources/en/inputs/4.txt,src/test/resources/en/expected/4.txt,33",
+            "src/test/resources/en/inputs/3.txt,src/test/resources/en/expected/3.txt,3",
+            //"src/test/resources/en/inputs/4.txt,src/test/resources/en/expected/4.txt,33",
     })
     @Override
     protected void testText(String input, String expected, String expectedParagraphsCountParam) {

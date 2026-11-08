@@ -28,8 +28,10 @@ class MorphoDiTaEnglishTest {
 
     @ParameterizedTest
     @CsvSource({
-            "src/test/resources/en/inputs/ewt/11.txt,src/test/resources/en/expected/ewt/11.txt",  //
-            "src/test/resources/en/inputs/gum/111.txt,src/test/resources/en/expected/gum/111.txt",  //
+            "src/test/resources/en/inputs/ewt/9.txt,src/test/resources/en/expected/ewt/9.txt",  //
+            "src/test/resources/en/inputs/ewt/8.txt,src/test/resources/en/expected/ewt/8.txt",  //
+            "src/test/resources/en/inputs/gum/109.txt,src/test/resources/en/expected/gum/109.txt",  //
+            "src/test/resources/en/inputs/gum/108.txt,src/test/resources/en/expected/gum/108.txt",  //
             "src/test/resources/en/inputs/lines/405.txt,src/test/resources/en/expected/lines/405.txt"  //
     })
     void testText(String input, String expected) {
