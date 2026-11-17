@@ -22,7 +22,7 @@ import cz.cvut.kbss.textanalysis.model.Word;
 public interface ChunkAnnotationService {
 
     /**
-     * Accepts a plain-text chunk and returns a stream of words
+     * Accepts a plain-label chunk and returns a stream of words
      *
      * @param textChunk Chunk to annotate
      * @return array of words extracted from the chunk

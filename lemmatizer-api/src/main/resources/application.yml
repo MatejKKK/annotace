@@ -2,7 +2,7 @@ application:
   version: ${version}
 
 annotace:
-  lemmatizer: spark
+  lemmatizer: morphodita
   llm-lem:
     api: GROQ
     api-keys: GROQ_API_KEY_2,GROQ_API_KEY

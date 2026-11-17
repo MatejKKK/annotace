@@ -135,7 +135,7 @@ public final class GroqClient extends BaseLLMClient {
         if (content == null || content.isBlank()) {
             String finishReason = choice.finish_reason();
             String message = ("Empty content in response (finish_reason=%s). This usually means the whole "
-                    + "max_tokens budget was spent on hidden reasoning before any answer text was "
+                    + "max_tokens budget was spent on hidden reasoning before any answer label was "
                     + "written - raise max_tokens for this prompt and/or lower reasoning_effort.")
                     .formatted(finishReason);
 

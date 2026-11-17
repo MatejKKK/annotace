@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class Helper {
     static final String BREAK = "\n\n\n\n";
 
-    /** Value of "surviving text" for texts of which nothing is removed. */
+    /** Value of "surviving label" for texts of which nothing is removed. */
     static final String ALL_KEPT = null;
 
     static int simpleSentenceCounter(List<String> paragraph, int maxSentenceLength) {

@@ -1,8 +1,13 @@
 package cz.cvut.kbss.textanalysis.termextractor.model;
 
-public record OrdinaryTextChunk (
-        String text
-) implements TextChunk {
+public final class OrdinaryTextChunk implements TextChunk {
+    private final String text;
+
+    public OrdinaryTextChunk(
+            String text
+    ) {
+        this.text = text.replace("\n", "");
+    }
 
     @Override
     public String getText() {

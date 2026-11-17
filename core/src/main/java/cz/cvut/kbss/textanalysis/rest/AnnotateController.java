@@ -49,6 +49,14 @@ public class AnnotateController {
         return service.annotate(enableKeywordExtraction, input);
     }
 
+    @RequestMapping(value = "/annotate-with-term-extractor", method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_XML_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public String annotateWithTermExtractor(
+                           @RequestBody TextAnalysisInput input) {
+        return service.annotate(input);
+    }
+
     @GetMapping(value = "/languages", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<String> getSupportedLanguages() {
         return service.getSupportedLanguages();

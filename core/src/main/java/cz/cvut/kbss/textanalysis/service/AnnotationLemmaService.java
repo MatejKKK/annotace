@@ -27,12 +27,11 @@ import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class AnnotationService {
+public class AnnotationLemmaService {
 
     private final LemmatizerApi lemmatizer;
 
@@ -40,7 +39,7 @@ public class AnnotationService {
 
     List<String> stopwordsList;
 
-    public AnnotationService(LemmatizerApi lemmatizer) {
+    public AnnotationLemmaService(LemmatizerApi lemmatizer) {
         this.lemmatizer = lemmatizer;
     }
 
@@ -104,7 +103,9 @@ public class AnnotationService {
                         isMatched = queryResults.getSingleLemmaResults().size() == 1;
                         isNotNegation = result.isNegated() == ontologyResults.isNegated();
 
-                        //determine if this result from text is one of the finding keywords
+                        System.out.println("MorphoDiTa match case: resultLemma: " + result.getLemma().toLowerCase() + ", resultToken: " + result.getToken().toLowerCase() + ", ontologyLemma: " + ontologyResults.getLemma().toLowerCase() + ", ontologyToken: " + ontologyResults.getToken().toLowerCase());
+
+                        //determine if this result from label is one of the finding keywords
                         if ((result.getLemma().contentEquals(ontologyResults.getLemma())  //it is similar
                                 || result.getToken().toLowerCase()
                                          .contentEquals(ontologyResults.getToken().toLowerCase())
@@ -112,7 +113,7 @@ public class AnnotationService {
                                          .contentEquals(ontologyResults.getToken().toLowerCase())) &&
                                 isNotNegation) {  //same negation
 
-                            Phrase matchedAnnotation = new Phrase(  //actually found keyword form text
+                            Phrase matchedAnnotation = new Phrase(  //actually found keyword form label
                                     queryResults.getType(),
                                     (kerResult.getKeywords().contains(result.getLemma())
                                             && (result.getToken().equals(queryResults.getLabel()))),

@@ -20,7 +20,7 @@ public class TextExtractor {
     /**
      * Marker appended by {@link #mergeParagraphs} to the end of every original paragraph that is
      * followed, inside the same merged result, by another original paragraph. Distinct from
-     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source text, only
+     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source label, only
      * where {@link #mergeParagraphs} glued two originally separate paragraphs together.
      */
     public static final String PARAGRAPH_MERGE_MARK = "9348435854367645";
@@ -28,7 +28,7 @@ public class TextExtractor {
     /**
      * Marker appended by {@link #mergeParagraphs} to the end of every original paragraph that is
      * followed, inside the same merged result, by another original paragraph. Distinct from
-     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source text, only
+     * {@value #PARAGRAPH_BREAK}: it does not mark a real paragraph boundary in the source label, only
      * where {@link #mergeParagraphs} glued two originally separate paragraphs together.
      */
     public static final String PARAGRAPH_MERGE_MARK_LINE = "9348435854367645^9348435854367645";
@@ -40,11 +40,11 @@ public class TextExtractor {
      */
     public static final double PARAGRAPH_MERGE_DECAY = 0.9;
 
-    /** What separates paragraphs: a real one in the source text, or the one left by {@link #mergeParagraphs}. */
+    /** What separates paragraphs: a real one in the source label, or the one left by {@link #mergeParagraphs}. */
     private static final Pattern PARAGRAPH_BOUNDARY =
             Pattern.compile(Pattern.quote(PARAGRAPH_BREAK) + "|" + Pattern.quote(PARAGRAPH_MERGE_MARK));
 
-    /** One text unit (a sentence or a paragraph) together with its original position. */
+    /** One label unit (a sentence or a paragraph) together with its original position. */
     private record IndexedText(String text, int order) { }
 
     /**
@@ -54,7 +54,7 @@ public class TextExtractor {
     private record LengthOrder(int length, List<Integer> orders) {
         /**
          * Merges two neighbours: lengths are summed (plus the separator placed between them when the
-         * units are joined back into text), orders are concatenated (this precedes next).
+         * units are joined back into label), orders are concatenated (this precedes next).
          */
         private LengthOrder merge(LengthOrder next, int separatorLength) {
             List<Integer> mergedOrders = new ArrayList<>(orders);
@@ -77,7 +77,7 @@ public class TextExtractor {
         }
     }
 
-    /** Splits text into single paragraphs wherever {@value #PARAGRAPH_BREAK} occurs. */
+    /** Splits label into single paragraphs wherever {@value #PARAGRAPH_BREAK} occurs. */
     public static List<String> extractParagraphs(String text) {
         return Arrays.stream(text.split(PARAGRAPH_BREAK)).map(it -> it + " " + PARAGRAPH_MERGE_MARK + " ").toList();
     }
@@ -88,9 +88,9 @@ public class TextExtractor {
      * {@value #PARAGRAPH_MERGE_MARK} (or {@value #PARAGRAPH_BREAK}); a sentence never spans such a
      * boundary. The sentences of all partial paragraphs are flattened into one list, but the separator
      * stays attached to the end of the last sentence of every non-final partial paragraph, so the
-     * boundary stays recognisable later (see {@link #mergeSentences}) and no text is lost.
+     * boundary stays recognisable later (see {@link #mergeSentences}) and no label is lost.
      * A separator of an empty partial paragraph is attached to the previous sentence (or, when there is
-     * none yet, to the next one); separators at the very end of the text are dropped.
+     * none yet, to the next one); separators at the very end of the label are dropped.
      */
     public static List<String> extractSentences(String paragraphGroup) {
         final List<String> paragraphs = new ArrayList<>();
@@ -195,7 +195,7 @@ public class TextExtractor {
      * the {@value #PARAGRAPH_MERGE_MARK}s between its members. Unlike sentences, paragraphs have no
      * forbidden boundary, so any neighbours may be merged. Whenever two original paragraphs end up next
      * to each other inside the same merged result, {@value #PARAGRAPH_MERGE_MARK} is appended to the end
-     * of the first one, so that join stays recognisable in the resulting text.
+     * of the first one, so that join stays recognisable in the resulting label.
      *
      * @param paragraphs is array of every single paragraph
      * @return merged paragraphs
@@ -225,7 +225,7 @@ public class TextExtractor {
     }
 
     /**
-     * Full pipeline from raw text to a single string of evenly sized chunks: splits the text into
+     * Full pipeline from raw label to a single string of evenly sized chunks: splits the label into
      * sentences ({@link #extractSentences}) and merges them into the shortest possible list where
      * every chunk has a length of at most maxSentenceLength ({@link #mergeSentences}, which may merge
      * sentences across a paragraph boundary too, as long as that boundary's paragraphs are each short
@@ -237,11 +237,11 @@ public class TextExtractor {
      * maxSentenceLength carries no separator at all.
      * <p>Example:
      * <pre>{@code
-     * String text = "First sentence. Second one.\n\n\n\nSecond paragraph starts here.";
-     * String result = TextExtractor.splitText(text, 60);
+     * String label = "First sentence. Second one.\n\n\n\nSecond paragraph starts here.";
+     * String result = TextExtractor.splitText(label, 60);
      * }</pre>
      *
-     * @param text raw text, optionally containing several {@value #PARAGRAPH_BREAK}-separated paragraphs
+     * @param text raw label, optionally containing several {@value #PARAGRAPH_BREAK}-separated paragraphs
      * @return the chunks, in the original order, concatenated into a single string
      */
     public static String splitText(String text, int maxSentenceLength) {
@@ -267,7 +267,7 @@ public class TextExtractor {
      *       a boundary blocks step 1.</li>
      * </ol>
      * Whenever whole paragraphs end up merged, the boundary between them does not need to be
-     * re-inserted: it is already embedded in the text, carried over from {@link #extractSentences}.
+     * re-inserted: it is already embedded in the label, carried over from {@link #extractSentences}.
      *
      * @param sentences is array of every single sentence
      * @return merged sentences
@@ -349,7 +349,7 @@ public class TextExtractor {
         return segments;
     }
 
-    /** Resolves a merge result back to text, joining each group's original units with the given separator. */
+    /** Resolves a merge result back to label, joining each group's original units with the given separator. */
     private static String[] toMergedArray(List<LengthOrder> merged, Map<Integer, String> textByOrder, String separator) {
         return merged.stream()
                 .map(group -> group.orders().stream()

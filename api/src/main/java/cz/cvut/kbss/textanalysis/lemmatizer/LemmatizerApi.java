@@ -24,9 +24,9 @@ import java.util.List;
 public interface LemmatizerApi {
 
     /**
-     * Lemmatizes the given text w.r.t. the given language.
+     * Lemmatizes the given label w.r.t. the given language.
      *
-     * @param text text to lemmatize
+     * @param text label to lemmatize
      * @param lang language to use
      * @return result of the lemmatizations
      * @throws cz.cvut.kbss.textanalysis.exception.UnsupportedLanguageException If the given language is not supported

@@ -11,12 +11,12 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Assigns lemmas from the LLM output to the original text nodes (chunks).
+ * Assigns lemmas from the LLM output to the original label nodes (chunks).
  * <p>
  * The LLM output cannot be trusted (it alters words, duplicates and drops passages, loses paragraph
  * boundaries), so only <b>the lemma and the negation flag</b> are taken from it. Tokens and whitespace are
- * always derived from the original text, so {@code leadingSpaces + sum(token + trailingSpaces)} of every chunk
- * is exactly the original text.
+ * always derived from the original label, so {@code leadingSpaces + sum(token + trailingSpaces)} of every chunk
+ * is exactly the original label.
  * <p>
  * Procedure:
  * <ol>
@@ -37,8 +37,8 @@ public final class LemmaAligner {
     private LemmaAligner() {}
 
     /**
-     * @param chunks texts of the text nodes in document order
-     * @param llm    lemmatization output for the whole text (may be null)
+     * @param chunks texts of the label nodes in document order
+     * @param llm    lemmatization output for the whole label (may be null)
      * @return a list of the same length as {@code chunks}
      */
     public static List<Chunk> align(final List<String> chunks, final LemmatizerResult llm) {

@@ -80,7 +80,7 @@ public abstract class LLMLemmatizerProcessor implements Runnable {
 
     final public List<List<SingleLemmaResult>> process(String text, String lang) {
         synchronized (locked) {
-            if (locked.get()) throw new RuntimeException("Cannot process text");
+            if (locked.get()) throw new RuntimeException("Cannot process label");
             try {
                 setLanguage(Language.valueOf(lang.toUpperCase()));
             }
@@ -102,7 +102,7 @@ public abstract class LLMLemmatizerProcessor implements Runnable {
     }
 
     public void setLanguage(Language language) {
-        if (this.locked.get()) throw new RuntimeException("Cannot process text");
+        if (this.locked.get()) throw new RuntimeException("Cannot process label");
         this.promptGenerator.setLanguage(language);
         this.lemmaResultFactory.setLanguage(language);
     }

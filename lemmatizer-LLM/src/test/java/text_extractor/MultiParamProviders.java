@@ -149,7 +149,7 @@ class MultiParamProviders {
                         kompozicí a vizuálními podmínkami (🡪 3.4), které se zaobírají tématy historických vedut, významných pohledů na město, a stavebních dominant.
                         Významné pohledy na město byly nově pro ÚAP 2024 revidovány a vznikla nová podoba aplikace, kde je možné je prohlížet.
                         """, 1, 1, 100),
-                arguments("Short text", 1, 1, 100),
+                arguments("Short label", 1, 1, 100),
                 arguments("""
                         AAA
                         
@@ -202,7 +202,7 @@ class MultiParamProviders {
                         kompozicí a vizuálními podmínkami (🡪 3.4), které se zaobírají tématy historických vedut, významných pohledů na město, a stavebních dominant.
                         Významné pohledy na město byly nově pro ÚAP 2024 revidovány a vznikla nová podoba aplikace, kde je možné je prohlížet.
                         """, 16, 360),
-                arguments("Short text", 1, 100)
+                arguments("Short label", 1, 100)
         );
     }
 
@@ -225,10 +225,10 @@ class MultiParamProviders {
                 "Druhá kapitola se zabývá historií města. Jak se utvářelo a jakými etapami prošlo?",
                 "Třetí kapitola popisuje současné uspořádání! Začíná strukturálním přístupem.");
 
-        //        description,                          text, surviving text, max paragraph, max sentence, paragraph chunks, sentence chunks
+        //        description,                          label, surviving label, max paragraph, max sentence, paragraph chunks, sentence chunks
         return Stream.of(
                 // --- the smallest inputs ---
-                arguments("empty text",
+                arguments("empty label",
                         "", ALL_KEPT, 100, 50, 1, 0),
                 arguments("one short sentence",
                         "Hello world.", ALL_KEPT, 100, 50, 1, 1),
@@ -259,7 +259,7 @@ class MultiParamProviders {
                         paragraphs("a".repeat(37), "b".repeat(37)), ALL_KEPT, 45, 100, 1, 1),
                 arguments("paragraphs stay apart when the merge mark makes them one character too long",
                         paragraphs("a".repeat(38), "b".repeat(37)), ALL_KEPT, 45, 100, 2, 2),
-                // After merging there is no paragraph break left, so the two paragraphs form one stretch of text
+                // After merging there is no paragraph break left, so the two paragraphs form one stretch of label
                 // and the join (no space after the dot) is not a sentence boundary: they become ONE sentence.
                 arguments("the join of two merged paragraphs does not split sentences, even when they end with a dot",
                         paragraphs("Alpha one is here.", "Beta two is here."), ALL_KEPT, 100, 100, 1, 1),
@@ -289,9 +289,9 @@ class MultiParamProviders {
                                 + BREAK + "Second paragraph ends here.",
                         100, 80, 1, 2),
 
-                // --- realistic text ---
+                // --- realistic label ---
                 // 126 + 82 + 76 characters + 2 marks = 316 > 300: the first paragraph stays alone, the other two merge.
-                arguments("Czech text with an abbreviation and three paragraphs",
+                arguments("Czech label with an abbreviation and three paragraphs",
                         czech, ALL_KEPT, 150, 120, 2, 5)
         );
     }

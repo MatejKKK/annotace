@@ -41,7 +41,7 @@ public class EInfraLemmatizerProcessor extends LLMLemmatizerProcessor {
 
     @Override
     public LLMLemmatizerProcessor setTextAndGet(String text, String lang, Stream<String> keys) {
-        if (locked.get()) throw new RuntimeException("Cannot process text");
+        if (locked.get()) throw new RuntimeException("Cannot process label");
         locked.set(true);
         setLanguage(Language.valueOf(lang.toUpperCase()));
         this.text = text;
@@ -51,7 +51,7 @@ public class EInfraLemmatizerProcessor extends LLMLemmatizerProcessor {
 
     @Override
     public void setKey(String key) {
-        if (locked.get()) throw new RuntimeException("Cannot process text");
+        if (locked.get()) throw new RuntimeException("Cannot process label");
         eInfraClient = new EInfraClient(new String[]{System.getenv(key)}, "openai/gpt-oss-20b");
     }
 

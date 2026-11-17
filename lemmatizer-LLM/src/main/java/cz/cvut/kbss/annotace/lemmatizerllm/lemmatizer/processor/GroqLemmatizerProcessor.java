@@ -41,19 +41,19 @@ public class GroqLemmatizerProcessor extends LLMLemmatizerProcessor {
     @Override
     public LLMLemmatizerProcessor setTextAndGet(String text, String lang, Stream<String> keys) {
         synchronized (locked) {
-            if (locked.get()) throw new RuntimeException("Cannot process text");
+            if (locked.get()) throw new RuntimeException("Cannot process label");
             setLanguage(Language.valueOf(lang.toUpperCase()));
             locked.set(true);
         }
         this.text = text;
-        System.out.println("text for proxy: " + text + "\n");
+        System.out.println("label for proxy: " + text + "\n");
         groqProxy = new GroqProxy(new GroqClient(keys.map(System::getenv).toArray(String[]::new), "openai/gpt-oss-20b"));
         return this;
     }
 
     @Override
     public void setKey(String key) {
-        if (locked.get()) throw new RuntimeException("Cannot process text");
+        if (locked.get()) throw new RuntimeException("Cannot process label");
         groqProxy.setGroqClient(new GroqClient(new String[]{System.getenv(key)}, "openai/gpt-oss-20b"));
     }
 

@@ -36,7 +36,7 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 public class LemmatizerConfig {
 
-    @Value("${annotace.lemmatizer:spark}")
+    @Value("morphodita-jni")
     private String lemmatizer;
 
     @Bean

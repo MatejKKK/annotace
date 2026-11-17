@@ -24,9 +24,9 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 /**
- * Represents input passed to the text analysis service.
+ * Represents input passed to the label analysis service.
  * <p>
- * Mainly contains the content to analyze and identification of the vocabulary whose terms will be used in the text
+ * Mainly contains the content to analyze and identification of the vocabulary whose terms will be used in the label
  * analysis.
  */
 @Getter
@@ -40,7 +40,7 @@ public class TextAnalysisInput {
     private String content;
 
     /**
-     * URI of the repository containing vocabulary whose terms are used in the text analysis.
+     * URI of the repository containing vocabulary whose terms are used in the label analysis.
      */
     private URI vocabularyRepository;
 
@@ -55,7 +55,7 @@ public class TextAnalysisInput {
     private String vocabularyRepositoryPassword;
 
     /**
-     * URI of the context containing vocabulary whose terms are used in the text analysis. Optional.
+     * URI of the context containing vocabulary whose terms are used in the label analysis. Optional.
      * <p>
      * If not specified, the whole {@link #vocabularyRepository} is searched for terms.
      */

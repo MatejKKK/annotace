@@ -143,7 +143,7 @@ public class TextExtractorTest {
                 count(String.join("", allSentenceChunks), PARAGRAPH_MERGE_MARK),
                 description + ": PARAGRAPH_MERGE_MARK must survive the sentence extraction");
         assertEquals(content(survivingText == null ? text : survivingText), content(String.join("", allSentenceChunks)),
-                description + ": text must be neither lost nor reordered");
+                description + ": label must be neither lost nor reordered");
         assertEquals(expectedParagraphChunks, paragraphChunks.length, description + ": paragraph chunks");
         assertEquals(expectedSentenceChunks, allSentenceChunks.size(), description + ": sentence chunks");
     }
@@ -154,8 +154,8 @@ public class TextExtractorTest {
     }
 
     /**
-     * Every word of the input is unique (t0001, t0002, ...), so a repeated word means duplicated text, a
-     * missing one lost text and a word out of order reordered text. Neighbouring chunks must also join
+     * Every word of the input is unique (t0001, t0002, ...), so a repeated word means duplicated label, a
+     * missing one lost label and a word out of order reordered label. Neighbouring chunks must also join
      * without a gap or an overlap: the first word of a chunk is the one right after the last of the previous.
      */
     @ParameterizedTest(name = "paragraph limit {0}, sentence limit {1}")

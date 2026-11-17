@@ -2,84 +2,22 @@ package cz.cvut.kbss.annotace.lemmatizerllm.termextractor.promts;
 
 public final class LongPromptTexts extends AbstractPromptTexts {
     @Override
-    public String CZECH() {
+    public String CZECH(String terms) {
         return """
-Jsi nástroj na morfologickou lemmatizaci českého textu. Pro každé slovo a interpunkční znaménko v zadané větě urči jeho základní (slovníkový) tvar.
-
-Pravidla:
-- Slovesa: infinitiv se stejným videm, jaký má tvar; nikdy ho nepřevádět na vidový protějšek ("prošlo" -> "projít", ne "procházet"; "nedocházelo" -> "docházet", ne "dojít"). Včetně "jsem" -> "být". Zápor "ne-" odstraň ("nesnídal" -> "snídat"). Lemma nikdy není v trpném rodu: "byl završen" -> "završit", "bylo rozšířeno" -> "rozšířit".
-- Nezaměňuj slovesa a přídavná jména. Trpné příčestí jako přívlastek je přídavné jméno ("vystavěného prostředí" -> "vystavěný", "uvedená města" -> "uvedený"). Tvary jako "studující" nebo "následující" jsou přídavná jména ("studující", "následující"), ne slovesa. Slovesná podstatná jména zůstávají podstatnými jmény ("uvedením" -> "uvedení").
-- Podstatná jména: 1. pád jednotného čísla. Pokud jednotné číslo nemají (housle, prázdniny, dveře), 1. pád množného čísla ("prázdninách" -> "prázdniny"), nikdy vymyšlené jednotné číslo. Pozor na tvary bez koncovky, které vypadají jako základní tvar, ale jsou to jiný pád ("lokalit" -> "lokalita", "dominant" -> "dominanta"); tvar neopisuj jen proto, že vypadá jako lemma. Vlastní jména: "Praze" -> "Praha"; přivlastňovací přídavné jméno "Karlova" (Univerzita Karlova) -> "Karlův".
-- Přídavná jména a příslovce: 1. stupeň, předponu "nej-" odstraň, i při nepravidelném stupňování ("lepší" -> "dobrý", "dále" -> "daleko", "déle" -> "dlouho", "dříve" -> "brzy", "později" -> "pozdě", "výše" -> "vysoko", "více" -> "mnoho"). Příslovce zůstává příslovcem ("nově" -> "nově", ne "nový"). Předpona "ne-" u přídavných jmen zůstává ("nemovitých" -> "nemovitý").
-- Skloňovaná zájmena normalizuj na základní tvar ("tě" -> "ty", "ta" -> "ten", "ho" -> "on").
-- Předložky, spojky, částice, číslovky, interpunkci a neohebná slova ponech beze změny; nevymýšlej jim jiné lemma ani jiný slovní druh ("pak" -> "pak", "trochu" -> "trochu", "nikoliv" -> "nikoliv").
-- Velká písmena: základní tvar se píše malými písmeny, i když je tvar na začátku věty velký ("Cílem" -> "cíl", "Žila" -> "žít"). Velké písmeno má lemma jen tehdy, když se slovo píše vždy s velkým (vlastní jména: "Praha", "Albert", "Karlův"). Velikost písmen původního tvaru na lemma nemá vliv. Jediná výjimka: římské číslice mají lemma vždy velkými písmeny ("ii" -> "II").
-- Diakritiku NEODSTRAŇUJ.
-- Každý interpunkční znak je samostatný řádek, včetně závorek a uvozovek („ “ "). Spojení jako ")." nebo ")," rozděl na dva řádky. Číslo nebo římská číslice s tečkou ("19. století", "ii. fáze") jsou dva řádky: číslo a zvlášť tečka.
-- Zachovej přesné pořadí slov a vytvoř samostatný řádek pro KAŽDÝ výskyt slova, i když se opakuje.
-- Výstup je vždy ve formátu: původní_tvar^základní_tvar, jeden pár na řádek.
-- Pokud narazíš na nový odstavec, vytvoř prázdný řádek.
-- Nepiš nic navíc - žádné vysvětlení, žádné nadpisy, jen řádky.
-
-Příklad 1:
-Vstup: "Nesnídal jsi nikdy dřív než v devět hodin, a tvoje sestry vstávaly ještě později."
-Výstup:
-Nesnídal^snídat
-jsi^být
-nikdy^nikdy
-dřív^brzy
-než^než
-v^v
-devět^devět
-hodin^hodina
-,^,
-a^a
-tvoje^tvůj
-sestry^sestra
-vstávaly^vstávat
-ještě^ještě
-později^pozdě
-.^.
-
-Příklad 2:
-Vstup: "Cílem kapitoly je analyzovat „veřejný prostor“ vystavěného města. Dále se zjišťuje, jak byla zástavba v 19. století rozšířena (ii. fáze)."
-Výstup:
-Cílem^cíl
-kapitoly^kapitola
-je^být
-analyzovat^analyzovat
-„^„
-veřejný^veřejný
-prostor^prostor
-“^“
-vystavěného^vystavěný
-města^město
-.^.
-Dále^daleko
-se^se
-zjišťuje^zjišťovat
-,^,
-jak^jak
-byla^být
-zástavba^zástavba
-v^v
-19^19
-.^.
-století^století
-rozšířena^rozšířit
-(^(
-ii^II
-.^.
-fáze^fáze
-)^)
-.^.
-
-Nyní zpracuj stejným způsobem následující věty:
-            """;
+Na základě seznamu pojmů najdi v odstavcích pod ním tyto pojmy.
+Může se stát, že nějaký pojem v odstavcích prostě není.
+Odstavce budou číslované per line a každý právě na jednom řádku v tomto úkolu i tvé odpovědi.
+Každý pojem ze seznamu má své id, takže jej v textu vrať jako ^^pojem^^[id_pojmu]
+Odstavce bez nalezeného pojmu mi nevracej.
+Vrácený odstavec zachovej přesně tak, jak si ho dostal s vyjímkou označení pojmu (^^ a [id_pojmu]), ale pojem v odstavci nech v půvoním tvaru.
+Seznam pojmů s jejich id:
+            """
+                .concat(terms)
+                .concat("Odstavce ke zpracování jsou: \n");
     }
 
     @Override
-    public String ENGLISH() {
+    public String ENGLISH(String terms) {
         return """
 You are a morphological lemmatization tool for a single English sentence. For every word in the given sentence, determine its base (dictionary) form.
 
@@ -147,7 +85,7 @@ Now process the following sentences the same way:
     }
 
     @Override
-    public String GERMAN() {
+    public String GERMAN(String terms) {
         return """
 Du bist ein Werkzeug zur morphologischen Lemmatisierung eines einzelnen deutschen Satzes. Bestimme für jedes Wort im gegebenen Satz seine Grundform.
 
@@ -219,7 +157,7 @@ Verarbeite nun den folgenden Satzen auf die gleiche Weise:
     }
 
     @Override
-    public String SLOVAK() {
+    public String SLOVAK(String terms) {
         return """
 Si nástroj na morfologickú lematizáciu slovenského textu. Pre každé slovo v zadanej vete urč jeho základný (slovníkový) tvar.
 

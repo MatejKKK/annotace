@@ -23,10 +23,17 @@ import cz.cvut.kbss.textanalysis.keywordextractor.KeywordExtractorAPI;
 import cz.cvut.kbss.textanalysis.keywordextractor.model.KeywordExtractorResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.LemmatizerResult;
 import cz.cvut.kbss.textanalysis.lemmatizer.model.SingleLemmaResult;
+import cz.cvut.kbss.textanalysis.model.Phrase;
 import cz.cvut.kbss.textanalysis.model.QueryResult;
 import cz.cvut.kbss.textanalysis.model.Word;
 import cz.cvut.kbss.textanalysis.service.html2rdfa.Annotator;
 import cz.cvut.kbss.textanalysis.service.lemma_aligner.Chunk;
+import cz.cvut.kbss.textanalysis.service.termextractor.TransferTerm;
+import cz.cvut.kbss.textanalysis.service.termextractor.TransferTermTable;
+import cz.cvut.kbss.textanalysis.termextractor.model.Paragraph;
+import cz.cvut.kbss.textanalysis.termextractor.model.Term;
+import cz.cvut.kbss.textanalysis.termextractor.model.TermExtractorResult;
+import cz.cvut.kbss.textanalysis.termextractor.model.TextChunk;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.jena.vocabulary.SKOS;
 import org.jsoup.Jsoup;
@@ -48,12 +55,16 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cz.cvut.kbss.textanalysis.service.lemma_aligner.LemmaAligner.*;
@@ -62,19 +73,25 @@ import static cz.cvut.kbss.textanalysis.service.lemma_aligner.LemmaAligner.*;
 @Slf4j
 public class HtmlAnnotationService {
 
-    private final AnnotationService annotationService;
+    private final AnnotationTermExtractionService annotationTermExtractionService;
+
+    private final AnnotationLemmaService annotationLemmaService;
 
     private final OntologyService ontologyService;
 
     private final KeywordExtractorAPI keywordExtractionService;
 
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("(\\S+)(\\s*)");
+
     private static final double MIN_LEMMA_COVERAGE = 0.8;
 
     @Autowired
-    public HtmlAnnotationService(AnnotationService annotationService,
+    public HtmlAnnotationService(AnnotationTermExtractionService annotationTermExtractionService,
+                                 AnnotationLemmaService annotationLemmaService,
                                  OntologyService ontologyService,
                                  KeywordExtractorAPI kerService) {
-        this.annotationService = annotationService;
+        this.annotationTermExtractionService = annotationTermExtractionService;
+        this.annotationLemmaService = annotationLemmaService;
         this.ontologyService = ontologyService;
         this.keywordExtractionService = kerService;
     }
@@ -102,6 +119,35 @@ public class HtmlAnnotationService {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
+    /**
+     * can be changed
+     * */
+    public String annotate(final TextAnalysisInput input) {
+        final Set<URI> vocabularies = getQueryUrlsForVocabularyContext(input);
+        final String lang = input.getLanguage();
+        final List<QueryResult> queryResultList = ontologyService
+                .analyzeModel(vocabularies, input.getVocabularyRepositoryUserName(),
+                        input.getVocabularyRepositoryPassword(), lang);
+        final Document doc = Jsoup.parse(  //transfer HTML label into document
+                unwrapSpan(  //removes all elements qeuried as span[score] ant return HTML label
+                        Jsoup.parse(input.getContent())
+                ).toString()
+        );
+
+        final List<Paragraph> chunks = new ArrayList<>();
+        AtomicLong paragraphId = new AtomicLong(1);
+        final NodeVisitor chunkCollector = new ChunkIterator(chunk -> chunks.add(new Paragraph(chunk.getWholeText(), paragraphId.incrementAndGet())));
+        NodeTraversor.traverse(chunkCollector, doc);
+
+        final TransferTermTable table = new TransferTermTable(queryResultList);
+        final Set<Term> terms = table.getTerms();
+        final List<TransferTerm> transferTermList = table.getTermTransfers();
+
+        final TermExtractorResult termExtractorResult = annotationTermExtractionService.extractTerms(chunks, terms, lang);
+
+        return this.annotate(termExtractorResult.getParagraphs(), table, doc, lang).toString();
+    }
+
     public String annotate(Boolean enableKeywordExtraction, final TextAnalysisInput input) {
         final Set<URI> vocabularies = getQueryUrlsForVocabularyContext(input);
         final String lang = input.getLanguage();
@@ -109,8 +155,8 @@ public class HtmlAnnotationService {
                 .analyzeModel(vocabularies, input.getVocabularyRepositoryUserName(),
                               input.getVocabularyRepositoryPassword(), lang);
 
-        final Document doc = Jsoup.parse(  //transfer HTML text into document
-                unwrapSpan(  //removes all elements qeuried as span[score] ant return HTML text
+        final Document doc = Jsoup.parse(  //transfer HTML label into document
+                unwrapSpan(  //removes all elements qeuried as span[score] ant return HTML label
                         Jsoup.parse(input.getContent())
                 ).toString()
         );
@@ -129,8 +175,8 @@ public class HtmlAnnotationService {
 
         final String fullText = String.join("\n\n\n\n", chunks);
 
-        if (annotationService.processAllTogether(fullText)) {
-            final LemmatizerResult llmResult = annotationService.processLemmatization(fullText, lang);
+        if (annotationLemmaService.processAllTogether(fullText)) {
+            final LemmatizerResult llmResult = annotationLemmaService.processLemmatization(fullText, lang);
 
             final List<List<SingleLemmaResult>> perChunk;
             if (llmResult != null && llmResult.getResult() != null
@@ -150,7 +196,7 @@ public class HtmlAnnotationService {
                     if (i >= aligned.size() || aligned.get(i).coverage() < MIN_LEMMA_COVERAGE) {
                         // The LLM dropped or garbled this chunk -> lemmatize it separately.
                         try {
-                            final LemmatizerResult retry = annotationService.processLemmatization(chunks.get(i), lang);
+                            final LemmatizerResult retry = annotationLemmaService.processLemmatization(chunks.get(i), lang);
                             aligned.set(i, align(List.of(chunks.get(i)), retry).getFirst());
                         }
                         catch (Exception ex) {
@@ -162,15 +208,15 @@ public class HtmlAnnotationService {
                 perChunk = aligned.stream().map(Chunk::tokens).collect(Collectors.toList());
             }
 
-            // Keyword extraction result + ontology are evaluated once over the whole text,
-            // then the words are split back into the text nodes.
+            // Keyword extraction result + ontology are evaluated once over the whole label,
+            // then the words are split back into the label nodes.
             final LemmatizerResult allResult = new LemmatizerResult();
             allResult.setLemmatizer(llmResult != null ? llmResult.getLemmatizer() : null);
             allResult.setResult(perChunk);
 
             final Map<String, List<Word[]>> wordsByChunk = new HashMap<>();
             try {
-                final List<Word> allWords = annotationService
+                final List<Word> allWords = annotationLemmaService
                         .getAnnotationsWithoutLemmatization(allResult, queryResultList, kerResult, lang);
                 int offset = 0; // one Word per token, in the same order
                 for (int i = 0; i < chunks.size(); ++i) {
@@ -188,14 +234,14 @@ public class HtmlAnnotationService {
                 if (!(words == null || words.isEmpty())) {
                     return words.removeFirst();
                 }
-                return new Word[]{new Word("", "", textChunk, "")}; // text stays unchanged
+                return new Word[]{new Word("", "", textChunk, "")}; // label stays unchanged
             }, doc, lang).toString();
         }
 
         //lemmatizer:
         return this.annotate(textChunk -> {
             try {
-                return annotationService.getAnnotations(textChunk, queryResultList, kerResult, lang)
+                return annotationLemmaService.getAnnotations(textChunk, queryResultList, kerResult, lang)
                                         .toArray(new Word[]{});
             } catch (Exception ex) {
                 log.error("Document annotation failed.", ex);
@@ -255,6 +301,50 @@ public class HtmlAnnotationService {
         return output;
     }
 
+    private record InternParagraph(
+            long id,
+            Word[] words
+    ) {}
+
+    private Document annotate(final List<Paragraph> proccessedChunks, TransferTermTable table, Document doc, String lang) {
+        //log.debug("Annotating document has started");
+
+        final Map<Long, String> typeById = table.getTermTransfers().stream()
+                .collect(Collectors.toMap(TransferTerm::id, TransferTerm::type, (a, b) -> a));
+        final Map<Long, String> labelById = table.getTerms().stream()
+                .collect(Collectors.toMap(Term::getId, Term::getText, (a, b) -> a));
+
+        final List<InternParagraph> wordsInOrder = proccessedChunks.stream()
+                .sorted(Comparator.comparingLong(Paragraph::id))
+                .map(paragraph -> new InternParagraph(paragraph.id(), toWords(paragraph, typeById, labelById)))
+                .toList();
+
+        final AtomicLong position = new AtomicLong(2);
+
+        final Document output = this.annotate(textChunk -> {
+            final long index = position.getAndIncrement();
+            if (wordsInOrder.stream().anyMatch(word -> word.id() == index)) {
+                return wordsInOrder.stream()
+                        .filter(word -> word.id() == index)
+                        .findFirst().orElseThrow()
+                        .words();
+            }
+            log.warn("No annotated paragraph for chunk at position {}", index);
+            return new Word[]{new Word("", "", textChunk, "")};
+        }, doc, lang);
+
+        if (position.get() != wordsInOrder.size()) {
+            log.warn("Chunk count {} differs from paragraph count {}", position.get(), wordsInOrder.size());
+        }
+
+        //log.debug("Annotating document has finished");
+        return output;
+    }
+
+    private String normalize(final String s) {
+        return s == null ? "" : s.replaceAll("\\s+", " ").strip();
+    }
+
     private Document unwrapSpan(Document doc) {
         Elements elements = doc.getElementsByTag(Constants.ANNOTATION_ELEMENT);
         for (Element element : elements) {
@@ -294,6 +384,51 @@ public class HtmlAnnotationService {
         return output;
     }
 
+    private Word[] toWords(final Paragraph paragraph,
+                           final Map<Long, String> typeById,
+                           final Map<Long, String> labelById) {
+        final List<Word> words = new ArrayList<>();
+
+        for (final TextChunk chunk : paragraph.content()) {
+            final String text = chunk.getText();
+            if (text == null || text.isEmpty()) {
+                continue;
+            }
+
+            final String type = typeById.get(chunk.getId());
+            final String trimmed = text.strip();
+
+            if (type == null || trimmed.isEmpty()) {
+                words.add(new Word("", text, "", ""));
+                continue;
+            }
+
+            final int start = text.indexOf(trimmed);
+            final String leading = text.substring(0, start);
+            final String trailing = text.substring(start + trimmed.length());
+
+            if (!leading.isEmpty()) {
+                words.add(new Word("", leading, "", ""));
+            }
+
+            final String label = labelById.getOrDefault(chunk.getId(), trimmed);
+            final Phrase phrase = new Phrase(type, true, true, label, "");
+
+            final Matcher matcher = TOKEN_PATTERN.matcher(trimmed);
+            while (matcher.find()) {
+                final String token = matcher.group(1);
+                final String stopChars = matcher.group(2);
+                words.add(new Word(token, token, "", stopChars, phrase));
+            }
+
+            if (!trailing.isEmpty()) {
+                words.add(new Word("", trailing, "", ""));
+            }
+        }
+
+        return words.toArray(new Word[]{});
+    }
+
     /**
      * @param node is document
      * @return if typeof is kbss`s attribute
@@ -309,6 +444,6 @@ public class HtmlAnnotationService {
      * @return List of supported languages
      */
     public List<String> getSupportedLanguages() {
-        return annotationService.getSupportedLanguages();
+        return annotationLemmaService.getSupportedLanguages();
     }
 }

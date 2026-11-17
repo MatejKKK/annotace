@@ -3,7 +3,7 @@ package cz.cvut.kbss.textanalysis.termextractor.model;
 public interface TextChunk {
 
     /**
-     * @return original text content
+     * @return original label content
      */
     String getText();
 

@@ -156,7 +156,7 @@ public class EInfraClient extends BaseLLMClient {
         if (content == null || content.isBlank()) {
             String finishReason = choice.finish_reason();
             String message = ("Empty content in response (finish_reason=%s). This usually means the whole "
-                    + "max_tokens budget was spent before any answer text was written - raise max_tokens "
+                    + "max_tokens budget was spent before any answer label was written - raise max_tokens "
                     + "for this prompt (reasoning_effort is not a reliable lever here - see class javadoc).")
                     .formatted(finishReason);
 
